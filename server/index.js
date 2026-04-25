@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { createReadStream } from 'node:fs';
-import { stat } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import { extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createSession, getClearSessionCookie, getSessionCookie, isSessionCookieValid, verifyAdminPassword } from './auth.js';
@@ -242,23 +242,63 @@ async function handleApi(req, res, url) {
 
 async function serveStatic(req, res, url) {
   const pathname = decodeURIComponent(url.pathname);
+  const isHtmlRequest = pathname === '/' || pathname.endsWith('.html') || !extname(pathname);
   const requestedPath = pathname === '/' ? '/index.html' : pathname;
   let filePath = resolve(join(distDir, requestedPath));
+  
   if (!filePath.startsWith(distDir)) {
     sendError(res, 403, 'Forbidden');
     return;
   }
 
+  let fileExists = false;
   try {
     const fileStat = await stat(filePath);
-    if (!fileStat.isFile()) throw new Error('Not a file');
+    if (fileStat.isFile()) {
+      fileExists = true;
+    }
   } catch {
-    filePath = join(distDir, 'index.html');
+    // 忽略错误，后面会处理 fallback 到 index.html
   }
 
+  if (!fileExists && isHtmlRequest) {
+    filePath = join(distDir, 'index.html');
+  } else if (!fileExists) {
+    sendError(res, 404, 'Not Found');
+    return;
+  }
+
+  const ext = extname(filePath);
   res.writeHead(200, {
-    'content-type': contentTypes[extname(filePath)] || 'application/octet-stream',
+    'content-type': contentTypes[ext] || 'application/octet-stream',
   });
+
+  // 如果是 index.html，进行标题注入
+  if (filePath === join(distDir, 'index.html')) {
+    try {
+      let content = await readFile(filePath, 'utf-8');
+      const settings = await store.readSettings();
+      let title = settings.siteName || '小米笔记博客';
+
+      // 检查是否是详情页
+      const noteMatch = pathname.match(/^\/note\/([^/]+)$/);
+      if (noteMatch) {
+        const notes = await store.readNotes();
+        const note = notes.find(n => n.id === decodeURIComponent(noteMatch[1]));
+        if (note && note.title) {
+          title = `${note.title} - ${settings.siteName || '小米笔记博客'}`;
+        }
+      }
+
+      content = content.replace(/<title>.*?<\/title>/, `<title>${title}</title>`);
+      res.end(content);
+      return;
+    } catch (error) {
+      console.error('处理 index.html 失败:', error);
+      // 如果出错，回退到流式传输原始文件
+    }
+  }
+
   createReadStream(filePath).pipe(res);
 }
 

@@ -69,7 +69,12 @@ export function NoteDetailPage() {
       .then(([noteResponse, settingsResponse]) => {
         const foundNote = noteResponse.note;
         setNote(foundNote);
-        setSettings({ ...defaultSettings, ...settingsResponse });
+        const nextSettings = { ...defaultSettings, ...settingsResponse };
+        setSettings(nextSettings);
+        
+        if (foundNote?.title) {
+          document.title = `${foundNote.title} - ${nextSettings.siteName}`;
+        }
 
         // 检查是否已解锁
         if (unlockedNotesData) {

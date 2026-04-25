@@ -35,6 +35,7 @@ export function HomePage() {
       .then(([serverSettings, adminSession]) => {
         const nextSettings = { ...defaultSettings, ...serverSettings };
         setSettings(nextSettings);
+        document.title = nextSettings.siteName || defaultSettings.siteName;
         setIsAuthenticated(isAccessPasswordAuthenticated(nextSettings.password));
         setIsAdminAuthenticated(Boolean(adminSession.authenticated));
       })
@@ -90,6 +91,7 @@ export function HomePage() {
     try {
       const savedSettings = await saveSettings(newSettings);
       setSettings({ ...defaultSettings, ...savedSettings });
+      document.title = savedSettings.siteName || defaultSettings.siteName;
       toast.success('设置已保存');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '保存设置失败');
