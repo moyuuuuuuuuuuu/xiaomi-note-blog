@@ -202,6 +202,7 @@ async function handleApi(req, res, url) {
     }
 
     if (req.method === 'PUT' && noteMatch) {
+      if (!requireAdmin(req, res)) return;
       const id = decodeURIComponent(noteMatch[1]);
       const body = await readBody(req);
       const notes = await store.readNotes();
@@ -212,6 +213,7 @@ async function handleApi(req, res, url) {
     }
 
     if (req.method === 'DELETE' && noteMatch) {
+      if (!requireAdmin(req, res)) return;
       const id = decodeURIComponent(noteMatch[1]);
       const notes = await store.readNotes();
       await store.writeNotes(notes.filter((note) => note.id !== id));

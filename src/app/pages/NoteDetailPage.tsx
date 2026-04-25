@@ -9,7 +9,7 @@ import { SetNotePasswordDialog } from '../components/SetNotePasswordDialog';
 import { NoteContent } from '../components/NoteContent';
 import type { Note, Settings as AppSettings } from '../App';
 import { toast } from 'sonner';
-import { deleteNote, fetchNote, fetchSettings, updateNote, verifyProtectedPassword } from '../lib/api';
+import { deleteNote, fetchAdminSession, fetchNote, fetchSettings, updateNote, verifyProtectedPassword } from '../lib/api';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,6 +35,7 @@ export function NoteDetailPage() {
   const [note, setNote] = useState<Note | null>(null);
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [isFolderUnlocked, setIsFolderUnlocked] = useState(false);
   const [passwordDialog, setPasswordDialog] = useState<{
@@ -65,10 +66,11 @@ export function NoteDetailPage() {
     const unlockedNotesData = localStorage.getItem('xiaomi-unlocked-notes');
     const unlockedFoldersData = localStorage.getItem('xiaomi-unlocked-folders');
 
-    Promise.all([fetchNote(noteId), fetchSettings()])
-      .then(([noteResponse, settingsResponse]) => {
+    Promise.all([fetchNote(noteId), fetchSettings(), fetchAdminSession()])
+      .then(([noteResponse, settingsResponse, adminSession]) => {
         const foundNote = noteResponse.note;
         setNote(foundNote);
+        setIsAdminAuthenticated(Boolean(adminSession.authenticated));
         const nextSettings = { ...defaultSettings, ...settingsResponse };
         setSettings(nextSettings);
         
@@ -221,61 +223,63 @@ export function NoteDetailPage() {
             返回
           </Button>
           
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <MoreVertical className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setNotePasswordDialog({ open: true, note })}>
-                <Shield className="size-4 mr-2" />
-                {note.password ? '修改笔记密码' : '设置笔记密码'}
-              </DropdownMenuItem>
-              {note.password && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    onClick={() => {
-                      setPasswordDialog({
-                        open: true,
-                        scope: 'note',
-                        id: note.id,
-                        title: '验证密码',
-                        description: `请输入笔记"${note.title}"的密码以移除密码保护`,
-                        onSuccess: async () => {
-                          await handleUpdateNote({
-                            ...note,
-                            password: undefined
-                          });
-                          toast.success('密码保护已移除');
-                          setIsUnlocked(false);
-                          // 从localStorage移除解锁状态
-                          const unlockedNotesData = localStorage.getItem('xiaomi-unlocked-notes');
-                          if (unlockedNotesData) {
-                            const unlockedNotes = JSON.parse(unlockedNotesData);
-                            const updatedUnlockedNotes = unlockedNotes.filter((id: string) => id !== note.id);
-                            localStorage.setItem('xiaomi-unlocked-notes', JSON.stringify(updatedUnlockedNotes));
+          {isAdminAuthenticated && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <MoreVertical className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setNotePasswordDialog({ open: true, note })}>
+                  <Shield className="size-4 mr-2" />
+                  {note.password ? '修改笔记密码' : '设置笔记密码'}
+                </DropdownMenuItem>
+                {note.password && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={() => {
+                        setPasswordDialog({
+                          open: true,
+                          scope: 'note',
+                          id: note.id,
+                          title: '验证密码',
+                          description: `请输入笔记"${note.title}"的密码以移除密码保护`,
+                          onSuccess: async () => {
+                            await handleUpdateNote({
+                              ...note,
+                              password: undefined
+                            });
+                            toast.success('密码保护已移除');
+                            setIsUnlocked(false);
+                            // 从localStorage移除解锁状态
+                            const unlockedNotesData = localStorage.getItem('xiaomi-unlocked-notes');
+                            if (unlockedNotesData) {
+                              const unlockedNotes = JSON.parse(unlockedNotesData);
+                              const updatedUnlockedNotes = unlockedNotes.filter((id: string) => id !== note.id);
+                              localStorage.setItem('xiaomi-unlocked-notes', JSON.stringify(updatedUnlockedNotes));
+                            }
                           }
-                        }
-                      });
-                    }}
-                  >
-                    <LockOpen className="size-4 mr-2" />
-                    移除密码保护
-                  </DropdownMenuItem>
-                </>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                className="text-red-600"
-                onClick={handleDeleteNote}
-              >
-                <Trash2 className="size-4 mr-2" />
-                删除笔记
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                        });
+                      }}
+                    >
+                      <LockOpen className="size-4 mr-2" />
+                      移除密码保护
+                    </DropdownMenuItem>
+                  </>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  className="text-red-600"
+                  onClick={handleDeleteNote}
+                >
+                  <Trash2 className="size-4 mr-2" />
+                  删除笔记
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
 

@@ -24,11 +24,12 @@ import {
 interface NotesListProps {
   notes: Note[];
   settings: AppSettings;
+  canManageNotes: boolean;
   onUpdateNote: (note: Note) => void | Promise<void>;
   onDeleteNote?: (noteId: string) => void;
 }
 
-export function NotesList({ notes, settings, onUpdateNote, onDeleteNote }: NotesListProps) {
+export function NotesList({ notes, settings, canManageNotes, onUpdateNote, onDeleteNote }: NotesListProps) {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFolder, setSelectedFolder] = useState<string>('all');
@@ -409,6 +410,7 @@ export function NotesList({ notes, settings, onUpdateNote, onDeleteNote }: Notes
                       </div>
 
                       {/* 三个点菜单按钮 */}
+                      {canManageNotes && (
                       <div className={`absolute right-2 top-3 transition-opacity ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -485,6 +487,7 @@ export function NotesList({ notes, settings, onUpdateNote, onDeleteNote }: Notes
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
+                      )}
                     </div>
                   ))}
                 </div>

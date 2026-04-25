@@ -142,6 +142,7 @@ export function HomePage() {
         <NotesList 
           notes={notes} 
           settings={settings}
+          canManageNotes={isAdminAuthenticated}
           onUpdateNote={async (updatedNote) => {
             try {
               const response = await updateNote(updatedNote);
