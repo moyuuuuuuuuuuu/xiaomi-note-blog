@@ -22,6 +22,8 @@ cp .env.example .env
 ADMIN_PASSWORD=你的管理员密码
 PORT=8787
 DATA_DIR=./data
+PASSWORD_LOCK_MAX_ATTEMPTS=5
+PASSWORD_LOCK_MS=86400000
 ```
 
 开发时需要同时启动 API 服务和 Vite：
@@ -51,6 +53,10 @@ data/
 ```
 
 可以通过 `DATA_DIR=/path/to/data` 改变位置。`data/` 已加入 `.gitignore`，不要提交到 GitHub。
+
+## 密码防爆破
+
+文章密码和分类密码由服务端验证。同一 IP 错误次数达到 `PASSWORD_LOCK_MAX_ATTEMPTS` 后会被锁定，锁定时长由 `PASSWORD_LOCK_MS` 控制，默认是 5 次错误后锁定 1 天。
 
 ## Cookie 安全
 

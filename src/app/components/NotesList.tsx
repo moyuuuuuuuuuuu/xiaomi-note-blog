@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Download, Search, FolderOpen, Calendar, FileText, Lock, Shield, MoreVertical, Trash2, LockOpen, Filter } from 'lucide-react';
+import { Download, Search, FolderOpen, Calendar, FileText, Lock, Shield, MoreVertical, Trash2, LockOpen } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
@@ -36,7 +36,6 @@ export function NotesList({ notes, settings, onUpdateNote, onDeleteNote }: Notes
   const [unlockedNotes, setUnlockedNotes] = useState<Set<string>>(new Set());
   const [unlockedFolders, setUnlockedFolders] = useState<Set<string>>(new Set());
   const [isMobile, setIsMobile] = useState(false);
-  const [showFolders, setShowFolders] = useState(false);
   const [passwordDialog, setPasswordDialog] = useState<{
     open: boolean;
     scope: 'note' | 'folder';
@@ -323,35 +322,12 @@ export function NotesList({ notes, settings, onUpdateNote, onDeleteNote }: Notes
 
       {/* 分类标签 */}
       {folders.length > 0 && (
-        <>
-          {/* 移动端悬浮分类按钮 */}
-          {isMobile && (
-            <div className="fixed bottom-6 right-6 z-50">
-              <Button
-                onClick={() => setShowFolders(!showFolders)}
-                className="rounded-full shadow-lg size-14 bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-              >
-                <Filter className="size-6" />
-              </Button>
-            </div>
-          )}
-
-          {/* 分类标签区域 */}
-          <div className={
-            isMobile 
-              ? showFolders 
-                ? 'fixed bottom-24 left-4 right-4 z-40 bg-white rounded-lg shadow-2xl border border-gray-200' 
-                : 'hidden'
-              : 'flex flex-wrap gap-2'
-          }>
-            <div className={isMobile ? 'p-4 max-h-72 overflow-y-auto' : 'flex flex-wrap gap-2'}>
+        <div className={isMobile ? 'overflow-x-auto pb-1' : 'flex flex-wrap gap-2'}>
+          <div className={isMobile ? 'flex w-max min-w-full gap-2 px-1' : 'flex flex-wrap gap-2'}>
               <Badge
                 variant={selectedFolder === 'all' ? 'default' : 'outline'}
-                className="cursor-pointer px-4 py-2 text-sm"
-                onClick={() => {
-                  setSelectedFolder('all');
-                  if (isMobile) setShowFolders(false);
-                }}
+                className="cursor-pointer whitespace-nowrap px-4 py-2 text-sm"
+                onClick={() => setSelectedFolder('all')}
               >
                 全部 ({notes.length})
               </Badge>
@@ -359,19 +335,15 @@ export function NotesList({ notes, settings, onUpdateNote, onDeleteNote }: Notes
                 <Badge
                   key={folder}
                   variant={selectedFolder === folder ? 'default' : 'outline'}
-                  className="cursor-pointer px-4 py-2 text-sm flex items-center gap-1"
-                  onClick={() => {
-                    setSelectedFolder(folder);
-                    if (isMobile) setShowFolders(false);
-                  }}
+                  className="cursor-pointer whitespace-nowrap px-4 py-2 text-sm flex items-center gap-1"
+                  onClick={() => setSelectedFolder(folder)}
                 >
                   {isFolderLocked(folder) && <Lock className="size-3" />}
                   {folder} ({notes.filter(n => n.folder === folder).length})
                 </Badge>
               ))}
             </div>
-          </div>
-        </>
+        </div>
       )}
 
       {/* 笔记列表和内容 */}
@@ -437,7 +409,7 @@ export function NotesList({ notes, settings, onUpdateNote, onDeleteNote }: Notes
                       </div>
 
                       {/* 三个点菜单按钮 */}
-                      <div className="absolute right-2 top-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className={`absolute right-2 top-3 transition-opacity ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button

@@ -8,8 +8,9 @@ import { Checkbox } from './ui/checkbox';
 import { Separator } from './ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Textarea } from './ui/textarea';
+import { NotePasswordDialog } from './NotePasswordDialog';
 import type { Settings } from '../App';
-import { fetchAdminSession, loginAdmin, saveMiCookie } from '../lib/api';
+import { fetchAdminSession, loginAdmin, saveMiCookie, verifyProtectedPassword } from '../lib/api';
 import { toast } from 'sonner';
 
 interface SettingsDialogProps {
@@ -34,6 +35,17 @@ export function SettingsDialog({ open, onClose, settings, onSave, onAdminAuthent
   const [adminConfigured, setAdminConfigured] = useState(true);
   const [miCookieInput, setMiCookieInput] = useState('');
   const [isSavingMiCookie, setIsSavingMiCookie] = useState(false);
+  const [confirmPasswordDialog, setConfirmPasswordDialog] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    onVerified: (password: string) => void | Promise<void>;
+  }>({
+    open: false,
+    title: '',
+    description: '',
+    onVerified: () => {},
+  });
 
   useEffect(() => {
     if (open) {
@@ -46,6 +58,7 @@ export function SettingsDialog({ open, onClose, settings, onSave, onAdminAuthent
       setAdminPassword('');
       setMiCookieInput('');
       setShowPassword(false);
+      setConfirmPasswordDialog(prev => ({ ...prev, open: false }));
       fetchAdminSession()
         .then((session) => {
           setIsAdminAuthenticated(Boolean(session.authenticated));
@@ -94,7 +107,48 @@ export function SettingsDialog({ open, onClose, settings, onSave, onAdminAuthent
   };
 
   const handleClearPassword = () => {
-    setPassword('');
+    if (!settings.password) {
+      setPassword('');
+      return;
+    }
+
+    setConfirmPasswordDialog({
+      open: true,
+      title: '验证访问密码',
+      description: '请输入当前站点访问密码以清除密码保护',
+      onVerified: (inputPassword) => {
+        if (inputPassword !== settings.password) {
+          throw new Error('原密码错误，请重试');
+        }
+        setPassword('');
+        setConfirmPasswordDialog(prev => ({ ...prev, open: false }));
+        toast.success('访问密码已清除，保存设置后生效');
+      },
+    });
+  };
+
+  const handleClearFolderPassword = (folder: string) => {
+    const savedPassword = settings.folderPasswords?.[folder] || '';
+    if (!savedPassword) {
+      handleRemoveFolderPassword(folder);
+      return;
+    }
+
+    setConfirmPasswordDialog({
+      open: true,
+      title: `验证分类密码：${folder}`,
+      description: '请输入当前分类密码以清除密码保护',
+      onVerified: async (inputPassword) => {
+        await verifyProtectedPassword({
+          scope: 'folder',
+          id: folder,
+          password: inputPassword,
+        });
+        handleRemoveFolderPassword(folder);
+        setConfirmPasswordDialog(prev => ({ ...prev, open: false }));
+        toast.success('分类密码已清除，保存设置后生效');
+      },
+    });
   };
 
   const handleAdminLogin = async () => {
@@ -124,6 +178,7 @@ export function SettingsDialog({ open, onClose, settings, onSave, onAdminAuthent
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -287,7 +342,7 @@ export function SettingsDialog({ open, onClose, settings, onSave, onAdminAuthent
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleRemoveFolderPassword(folder)}
+                              onClick={() => handleClearFolderPassword(folder)}
                             >
                               清除
                             </Button>
@@ -431,5 +486,13 @@ export function SettingsDialog({ open, onClose, settings, onSave, onAdminAuthent
         </div>
       </DialogContent>
     </Dialog>
+    <NotePasswordDialog
+      open={confirmPasswordDialog.open}
+      onClose={() => setConfirmPasswordDialog(prev => ({ ...prev, open: false }))}
+      onVerified={confirmPasswordDialog.onVerified}
+      title={confirmPasswordDialog.title}
+      description={confirmPasswordDialog.description}
+    />
+    </>
   );
 }

@@ -12,12 +12,12 @@ export function Footer({ siteName }: FooterProps) {
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <span>Made with</span>
             <Heart className="size-4 text-red-500 fill-red-500" />
-            <span>by the community</span>
+            <span>by the moyuuuuuuuu</span>
           </div>
           
           <div className="flex items-center gap-6 text-sm">
             <a 
-              href="#" 
+              href="https://github.com/moyuuuuuuuuuuu/xiaomi-note-blog"
               className="text-gray-600 hover:text-gray-900 transition-colors flex items-center gap-2"
             >
               <Github className="size-4" />
