@@ -269,7 +269,7 @@ createServer(async (req, res) => {
     return;
   }
   await serveStatic(req, res, url);
-}).listen(port, () => {
+}).listen(port,'0.0.0.0', () => {
   console.log(`xiaominote server listening on http://127.0.0.1:${port}`);
   console.log(`data directory: ${dataDir}`);
   if (!adminPassword) {
