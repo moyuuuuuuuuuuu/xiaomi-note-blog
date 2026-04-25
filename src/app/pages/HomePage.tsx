@@ -4,9 +4,10 @@ import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { PasswordDialog } from '../components/PasswordDialog';
 import { SettingsDialog } from '../components/SettingsDialog';
+import { AdminPasswordDialog } from '../components/AdminPasswordDialog';
 import { toast } from 'sonner';
 import type { Note, Settings as AppSettings } from '../App';
-import { deleteNote, fetchAdminSession, fetchNotes, fetchSettings, saveSettings, syncNotes, updateNote } from '../lib/api';
+import { deleteNote, fetchAdminSession, fetchNotes, fetchSettings, loginAdmin, saveSettings, syncNotes, updateNote } from '../lib/api';
 import { isAccessPasswordAuthenticated, markAccessPasswordAuthenticated } from '../lib/accessSession';
 
 const defaultSettings: AppSettings = {
@@ -25,6 +26,7 @@ export function HomePage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
@@ -104,6 +106,22 @@ export function HomePage() {
     toast.success('登录成功');
   };
 
+  const handleOpenSettings = () => {
+    if (isAdminAuthenticated) {
+      setShowSettings(true);
+      return;
+    }
+    setShowAdminLogin(true);
+  };
+
+  const handleAdminVerified = async (password: string) => {
+    await loginAdmin(password);
+    setIsAdminAuthenticated(true);
+    setShowAdminLogin(false);
+    setShowSettings(true);
+    toast.success('管理员认证成功');
+  };
+
   // 等待设置加载完成
   if (!isSettingsLoaded) {
     return (
@@ -132,7 +150,7 @@ export function HomePage() {
         onSync={handleSync}
         isSyncing={isSyncing}
         canSync={isAdminAuthenticated}
-        onOpenSettings={() => setShowSettings(true)}
+        onOpenSettings={handleOpenSettings}
         siteName={settings.siteName}
         siteDescription={settings.siteDescription}
         logoUrl={settings.logoUrl}
@@ -174,6 +192,11 @@ export function HomePage() {
         onSave={handleSaveSettings}
         onAdminAuthenticated={() => setIsAdminAuthenticated(true)}
         allFolders={Array.from(new Set(notes.map(n => n.folder).filter(Boolean))) as string[]}
+      />
+      <AdminPasswordDialog
+        open={showAdminLogin}
+        onClose={() => setShowAdminLogin(false)}
+        onVerified={handleAdminVerified}
       />
     </div>
   );
