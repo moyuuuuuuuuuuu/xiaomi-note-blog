@@ -7,6 +7,7 @@ import { createSession, getClearSessionCookie, getSessionCookie, isSessionCookie
 import { loadEnvFile } from './env.js';
 import { createPasswordAttemptLimiter, getClientIp, verifyProtectedPassword } from './passwordLock.js';
 import { createDataStore, getPublicSettings, mergeSyncedNotes } from './storage.js';
+import { createXiaomiImageCache, warmXiaomiImageCache } from './xiaomiImageCache.js';
 import { fetchXiaomiNoteImage, syncXiaomiNotesFromServer } from './xiaomi.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
@@ -24,6 +25,7 @@ const passwordLimiter = createPasswordAttemptLimiter({
   lockMs: Number(process.env.PASSWORD_LOCK_MS || 24 * 60 * 60 * 1000),
 });
 const store = createDataStore(dataDir);
+const imageCache = createXiaomiImageCache(dataDir);
 
 const contentTypes = {
   '.html': 'text/html; charset=utf-8',
@@ -81,17 +83,29 @@ function requireAdmin(req, res) {
   return false;
 }
 
+function sendImage(req, res, image) {
+  res.writeHead(200, {
+    'content-type': image.contentType,
+    'content-length': image.body.length,
+    'cache-control': 'private, max-age=3600',
+  });
+  res.end(req.method === 'HEAD' ? undefined : image.body);
+}
+
 async function handleApi(req, res, url) {
   try {
     const imageMatch = url.pathname.match(/^\/api\/xiaomi-image\/([^/]+)$/);
-    if (req.method === 'GET' && imageMatch) {
+    if ((req.method === 'GET' || req.method === 'HEAD') && imageMatch) {
       const settings = await store.readSettings();
-      const image = await fetchXiaomiNoteImage(settings.miCookie, decodeURIComponent(imageMatch[1]));
-      res.writeHead(200, {
-        'content-type': image.contentType,
-        'cache-control': 'private, max-age=3600',
-      });
-      res.end(image.body);
+      const fileId = decodeURIComponent(imageMatch[1]);
+      const cachedImage = await imageCache.read(fileId);
+      if (cachedImage) {
+        sendImage(req, res, cachedImage);
+        return;
+      }
+      const image = await fetchXiaomiNoteImage(settings.miCookie, fileId);
+      await imageCache.write(fileId, image);
+      sendImage(req, res, image);
       return;
     }
 
@@ -229,6 +243,15 @@ async function handleApi(req, res, url) {
       const syncedNotes = selectedFolders.length > 0
         ? notes.filter((note) => selectedFolders.includes(note.folder || ''))
         : notes;
+      const imageFailures = await warmXiaomiImageCache({
+        notes: syncedNotes,
+        cache: imageCache,
+        cookie: settings.miCookie,
+        fetchImage: fetchXiaomiNoteImage,
+      });
+      if (imageFailures.length > 0) {
+        console.warn('部分小米笔记图片缓存失败:', imageFailures);
+      }
       const mergedNotes = mergeSyncedNotes(await store.readNotes(), syncedNotes);
       await store.writeNotes(mergedNotes);
       sendJson(res, 200, { notes: mergedNotes });
