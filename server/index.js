@@ -7,7 +7,7 @@ import { createSession, getClearSessionCookie, getSessionCookie, isSessionCookie
 import { loadEnvFile } from './env.js';
 import { createPasswordAttemptLimiter, getClientIp, verifyProtectedPassword } from './passwordLock.js';
 import { createDataStore, getPublicSettings, mergeSyncedNotes } from './storage.js';
-import { createXiaomiImageCache, warmXiaomiImageCache } from './xiaomiImageCache.js';
+import { createXiaomiImageCache, prepareSyncedNotesWithImageCache } from './xiaomiImageCache.js';
 import { fetchXiaomiNoteImage, syncXiaomiNotesFromServer } from './xiaomi.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
@@ -94,6 +94,17 @@ function sendImage(req, res, image) {
 
 async function handleApi(req, res, url) {
   try {
+    const localImageMatch = url.pathname.match(/^\/api\/images\/([^/]+)$/);
+    if ((req.method === 'GET' || req.method === 'HEAD') && localImageMatch) {
+      const image = await imageCache.readByKey(decodeURIComponent(localImageMatch[1]));
+      if (!image) {
+        sendError(res, 404, '图片未缓存，请更新 Cookie 后重新同步');
+        return;
+      }
+      sendImage(req, res, image);
+      return;
+    }
+
     const imageMatch = url.pathname.match(/^\/api\/xiaomi-image\/([^/]+)$/);
     if ((req.method === 'GET' || req.method === 'HEAD') && imageMatch) {
       const settings = await store.readSettings();
@@ -243,16 +254,18 @@ async function handleApi(req, res, url) {
       const syncedNotes = selectedFolders.length > 0
         ? notes.filter((note) => selectedFolders.includes(note.folder || ''))
         : notes;
-      const imageFailures = await warmXiaomiImageCache({
+      const prepared = await prepareSyncedNotesWithImageCache({
         notes: syncedNotes,
         cache: imageCache,
         cookie: settings.miCookie,
         fetchImage: fetchXiaomiNoteImage,
+        updateReferences: false,
       });
-      if (imageFailures.length > 0) {
-        console.warn('部分小米笔记图片缓存失败:', imageFailures);
+      if (prepared.failures.length > 0) {
+        console.warn('部分小米笔记图片缓存失败:', prepared.failures);
       }
-      const mergedNotes = mergeSyncedNotes(await store.readNotes(), syncedNotes);
+      const mergedNotes = mergeSyncedNotes(await store.readNotes(), prepared.notes);
+      await imageCache.updateReferences(mergedNotes);
       await store.writeNotes(mergedNotes);
       sendJson(res, 200, { notes: mergedNotes });
       return;
