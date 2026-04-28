@@ -7,33 +7,33 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 interface NotePasswordDialogProps {
   open: boolean;
   onClose: () => void;
-  onVerified: () => void;
-  expectedPassword: string;
+  onVerified: (password: string) => Promise<boolean>;
   title: string;
   description?: string;
 }
 
-export function NotePasswordDialog({ 
-  open, 
-  onClose, 
-  onVerified, 
-  expectedPassword, 
+export function NotePasswordDialog({
+  open,
+  onClose,
+  onVerified,
   title,
-  description 
+  description
 }: NotePasswordDialogProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (password === expectedPassword) {
-      setError('');
-      setPassword('');
-      onVerified();
-      onClose();
-    } else {
+    if (!password || verifying) return;
+
+    setVerifying(true);
+    setError('');
+    const ok = await onVerified(password);
+    setVerifying(false);
+
+    if (!ok) {
       setError('密码错误，请重试');
       setPassword('');
     }
@@ -73,35 +73,33 @@ export function NotePasswordDialog({
                 }}
                 className="pr-10"
                 autoFocus
+                disabled={verifying}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                disabled={verifying}
               >
-                {showPassword ? (
-                  <EyeOff className="size-4" />
-                ) : (
-                  <Eye className="size-4" />
-                )}
+                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
               </button>
             </div>
-            
+
             {error && (
               <p className="text-sm text-red-500">{error}</p>
             )}
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={handleClose}>
+            <Button type="button" variant="outline" onClick={handleClose} disabled={verifying}>
               取消
             </Button>
             <Button
               type="submit"
               className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-              disabled={!password}
+              disabled={!password || verifying}
             >
-              解锁
+              {verifying ? '验证中...' : '解锁'}
             </Button>
           </div>
         </form>

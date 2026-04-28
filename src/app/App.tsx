@@ -24,6 +24,12 @@ export interface Settings {
   selectedFolders: string[];
   folderPasswords: { [folder: string]: string }; // 分类密码
   authCookie?: string; // 用户自定义的认证Cookie
+  authCookieUpdatedAt?: number; // Cookie设置时间记录
+  siteName?: string; // 站点名称
+  siteDescription?: string; // 站点标语/Slogan
+  logoUrl?: string; // Logo 图片 URL
+  miCookie?: string; // 小米云服务Cookie（用于同步笔记）
+  miCookieUpdatedAt?: number; // 小米Cookie设置时间记录
 }
 
 export default function App() {
