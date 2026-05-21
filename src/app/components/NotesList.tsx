@@ -10,6 +10,7 @@ import { SetNotePasswordDialog } from './SetNotePasswordDialog';
 import { NoteContent } from './NoteContent';
 import type { Note, Settings as AppSettings } from '../App';
 import { verifyProtectedPassword } from '../lib/api';
+import { stripNoteMarkdown } from '../lib/noteMarkdown.js';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { toast } from 'sonner';
@@ -391,7 +392,7 @@ export function NotesList({ notes, settings, canManageNotes, onUpdateNote, onDel
                           </div>
                           
                           <p className="text-xs text-gray-500 line-clamp-2">
-                            {isNoteLocked(note) ? '••••••••••••••••••••' : truncateContent(note.content.replace(/\n/g, ' '))}
+                            {isNoteLocked(note) ? '••••••••••••••••••••' : truncateContent(stripNoteMarkdown(note.content))}
                           </p>
                           
                           <div className="flex items-center gap-2 text-xs text-gray-400">

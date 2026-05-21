@@ -1,3 +1,94 @@
 @import './fonts.css';
 @import './tailwind.css';
 @import './theme.css';
+
+.note-content {
+  overflow-wrap: anywhere;
+}
+
+.note-content > * + * {
+  margin-top: 0.75rem;
+}
+
+.note-content h1,
+.note-content h2,
+.note-content h3,
+.note-content h4,
+.note-content h5,
+.note-content h6 {
+  color: #111827;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.note-content h1 {
+  font-size: 1.5rem;
+}
+
+.note-content h2 {
+  font-size: 1.25rem;
+}
+
+.note-content h3,
+.note-content h4,
+.note-content h5,
+.note-content h6 {
+  font-size: 1.125rem;
+}
+
+.note-content ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+}
+
+.note-content li + li {
+  margin-top: 0.25rem;
+}
+
+.note-content .task-list-item {
+  list-style: none;
+  margin-left: -1.5rem;
+}
+
+.note-content .task-list-item input {
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
+.note-content blockquote {
+  border-left: 3px solid #d1d5db;
+  color: #4b5563;
+  padding-left: 0.875rem;
+}
+
+.note-content hr {
+  border: 0;
+  border-top: 1px solid #e5e7eb;
+  margin: 1rem 0;
+}
+
+.note-content a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.note-content img {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  display: block;
+  height: auto;
+  margin: 0.75rem 0;
+  max-height: 70vh;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.note-content code {
+  background: #f3f4f6;
+  border-radius: 0.25rem;
+  color: #111827;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.9em;
+  padding: 0.1rem 0.25rem;
+}
