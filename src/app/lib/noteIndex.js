@@ -31,3 +31,18 @@ export function formatIndexDate(timestamp) {
 export function toIndexNumber(index) {
   return String(index + 1).padStart(2, '0');
 }
+
+const NOTE_CARD_VARIANTS = ['hero', 'wide', 'medium', 'compact', 'tall', 'closing'];
+
+export function getNoteCardLayout(index) {
+  const safeIndex = Number.isFinite(index) && index >= 0 ? Math.floor(index) : 0;
+  const slot = safeIndex % NOTE_CARD_VARIANTS.length;
+  const group = Math.floor(safeIndex / NOTE_CARD_VARIANTS.length);
+
+  return {
+    variant: NOTE_CARD_VARIANTS[slot],
+    direction: group % 2 === 0 ? 'forward' : 'reverse',
+    slot,
+    group,
+  };
+}
