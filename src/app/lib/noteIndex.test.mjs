@@ -1,5 +1,11 @@
 import assert from 'node:assert/strict';
-import { collectFolders, filterNotes, formatIndexDate, toIndexNumber } from './noteIndex.js';
+import {
+  collectFolders,
+  filterNotes,
+  formatIndexDate,
+  getNoteCardLayout,
+  toIndexNumber,
+} from './noteIndex.js';
 
 const notes = [
   { id: '1', title: '傍晚六点的风', content: '江边散步', folder: '生活', modifyTime: Date.UTC(2026, 6, 17) },
@@ -18,3 +24,12 @@ assert.deepEqual(collectFolders(notes), [
 assert.equal(formatIndexDate(Date.UTC(2026, 6, 17)), '2026.07.17');
 assert.equal(toIndexNumber(0), '01');
 assert.equal(toIndexNumber(11), '12');
+
+assert.deepEqual(
+  Array.from({ length: 6 }, (_, index) => getNoteCardLayout(index).variant),
+  ['hero', 'wide', 'medium', 'compact', 'tall', 'closing'],
+);
+assert.deepEqual(getNoteCardLayout(0), { variant: 'hero', direction: 'forward', slot: 0, group: 0 });
+assert.deepEqual(getNoteCardLayout(6), { variant: 'hero', direction: 'reverse', slot: 0, group: 1 });
+assert.deepEqual(getNoteCardLayout(12), { variant: 'hero', direction: 'forward', slot: 0, group: 2 });
+assert.deepEqual(getNoteCardLayout(-1), { variant: 'hero', direction: 'forward', slot: 0, group: 0 });
