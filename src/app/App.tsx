@@ -1,13 +1,6 @@
-import { useState, useEffect } from 'react';
-import { NotesList } from './components/NotesList';
-import { Header } from './components/Header';
-import { Footer } from './components/Footer';
-import { PasswordDialog } from './components/PasswordDialog';
-import { SettingsDialog } from './components/SettingsDialog';
 import { RouterProvider } from 'react-router';
 import { router } from './routes';
 import { Toaster } from './components/ui/sonner';
-import { toast } from 'sonner';
 
 export interface NoteSummary {
   id: string;
@@ -22,8 +15,6 @@ export interface NoteSummary {
 export interface NoteDetail extends NoteSummary {
   content: string;
 }
-
-export type Note = NoteDetail & { password?: string };
 
 export type NoteUpdate = { id: string } & Partial<Pick<NoteDetail, 'title' | 'content' | 'folder' | 'createTime' | 'modifyTime'>> & {
   password?: string;

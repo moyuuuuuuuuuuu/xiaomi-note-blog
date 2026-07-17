@@ -173,6 +173,20 @@ try {
   assert.equal(adminSettings.folderPasswords.Work, 'folder-secret');
   assert.equal('miCookie' in adminSettings, false);
 
+  const miCookieResponse = await fetch(`${baseUrl}/api/settings/mi-cookie`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      cookie: adminCookie,
+    },
+    body: JSON.stringify({ cookie: 'serviceToken=updated-secret' }),
+  });
+  assert.equal(miCookieResponse.status, 200);
+  const miCookieSettings = await miCookieResponse.json();
+  assert.equal(miCookieSettings.folderPasswords.Work, 'folder-secret');
+  assert.equal(miCookieSettings.hasMiCookie, true);
+  assert.equal('miCookie' in miCookieSettings, false);
+
   const exportResponse = await fetch(`${baseUrl}/api/admin/notes/export`, {
     headers: { cookie: adminCookie },
   });

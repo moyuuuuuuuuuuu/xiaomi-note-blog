@@ -245,14 +245,14 @@ async function handleApi(req, res, url) {
       if (!requireAdmin(req, res)) return;
       const body = await readBody(req);
       const settings = await store.updateSettings({ miCookie: body.cookie || '' });
-      sendJson(res, 200, getPublicSettings(settings));
+      sendJson(res, 200, getAdminSettings(settings));
       return;
     }
 
     if (req.method === 'DELETE' && url.pathname === '/api/settings/mi-cookie') {
       if (!requireAdmin(req, res)) return;
       const settings = await store.updateSettings({ miCookie: '' });
-      sendJson(res, 200, getPublicSettings(settings));
+      sendJson(res, 200, getAdminSettings(settings));
       return;
     }
 

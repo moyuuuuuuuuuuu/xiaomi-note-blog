@@ -101,7 +101,10 @@ export function SettingsDialog({ open, onClose, settings, onSave, onAdminAuthent
       logoUrl,
       password,
       selectedFolders,
-      folderPasswords
+      folderPasswords,
+      protectedFolders: settings.protectedFolders,
+      hasMiCookie: settings.hasMiCookie,
+      miCookieUpdatedAt: settings.miCookieUpdatedAt,
     });
     onClose();
   };
