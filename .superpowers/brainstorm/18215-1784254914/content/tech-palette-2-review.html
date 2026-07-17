@@ -1,0 +1,23 @@
+<style>
+  .tech-shell{max-width:1040px;margin:22px auto 0;border:1px solid #243044;border-radius:28px;overflow:hidden;background:#070b12;color:#f1f6ff;box-shadow:0 30px 90px rgba(0,8,20,.38)}
+  .scene{min-height:570px;position:relative;overflow:hidden;background:radial-gradient(circle at 73% 18%,rgba(67,160,255,.18),transparent 29%),radial-gradient(circle at 17% 82%,rgba(79,111,164,.12),transparent 25%),linear-gradient(145deg,#0b111d,#05080e)}
+  .grid{position:absolute;inset:0;background-image:linear-gradient(rgba(119,164,218,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(119,164,218,.07) 1px,transparent 1px);background-size:36px 36px;mask-image:linear-gradient(to bottom,#000,transparent 82%)}
+  .glow{position:absolute;width:360px;height:360px;border-radius:50%;right:-70px;top:-90px;background:rgba(53,155,255,.14);filter:blur(65px)}
+  .nav{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:21px 26px;border-bottom:1px solid rgba(123,151,189,.15);backdrop-filter:blur(16px)}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:500;letter-spacing:-.02em}.mark{width:29px;height:29px;display:grid;place-items:center;border-radius:9px;background:#eaf3ff;color:#09101a;font-size:11px;box-shadow:0 0 24px rgba(115,184,255,.18)}
+  .actions{display:flex;gap:8px}.action{padding:8px 12px;border:1px solid #27354a;border-radius:10px;background:rgba(18,27,41,.72);font-size:10px;color:#becbdd}.action.primary{background:#dcecff;color:#07101c;border-color:#dcecff;box-shadow:0 8px 30px rgba(112,181,255,.2)}
+  .hero{position:relative;z-index:2;padding:68px 42px 36px;max-width:650px}.eyebrow{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#72baff}.hero h2{font-size:46px;line-height:1.02;letter-spacing:-.055em;margin:14px 0 16px;font-weight:500}.hero p{max-width:440px;font-size:13px;line-height:1.7;color:#8f9db0}.search{margin-top:26px;width:min(440px,90%);padding:13px 15px;border:1px solid #25344a;border-radius:13px;background:rgba(14,22,34,.7);box-shadow:0 14px 35px rgba(0,0,0,.24);font-size:10px;color:#78879b}
+  .cards{position:relative;z-index:3;display:grid;grid-template-columns:1.15fr .85fr .95fr;gap:14px;padding:0 28px 34px}.cardx{min-height:135px;padding:18px;border:1px solid rgba(80,103,135,.28);border-radius:19px;background:rgba(16,24,37,.67);backdrop-filter:blur(18px);box-shadow:0 20px 45px rgba(0,0,0,.22);transition:.25s ease}.cardx:hover{transform:translateY(-7px);border-color:rgba(111,183,255,.45);box-shadow:0 25px 55px rgba(26,92,156,.18)}.cardx:nth-child(2){transform:translateY(22px)}.cardx:nth-child(2):hover{transform:translateY(15px)}.meta{display:flex;justify-content:space-between;align-items:center;font-size:9px;color:#718199}.signal{width:7px;height:7px;border-radius:50%;background:#68b5ff;box-shadow:0 0 0 5px rgba(104,181,255,.09),0 0 18px rgba(104,181,255,.6)}.cardx h3{margin:28px 0 8px;font-size:14px;font-weight:500;color:#eef5ff}.cardx p{font-size:10px;line-height:1.5;color:#7e8da2;margin:0}.footnote{padding:15px 24px;border-top:1px solid #202b3c;background:#0a0f18;font-size:11px;color:#8492a6;display:flex;justify-content:space-between}.tag{color:#72baff;font-weight:500}
+  @media(max-width:760px){.hero{padding:48px 24px 28px}.hero h2{font-size:34px}.cards{grid-template-columns:1fr;padding:0 20px 28px}.cardx:nth-child(2),.cardx:nth-child(2):hover{transform:none}.actions .action:first-child{display:none}}
+</style>
+<h2>方案 2 · 深空黑 / 银灰 / 冰蓝</h2>
+<p class="subtitle">版式保持一致，只切换为低亮深色空间，重点观察沉浸感是否过强。</p>
+<div class="tech-shell" data-choice="palette-deep-space" onclick="toggleSelect(this)">
+  <div class="scene"><div class="grid"></div><div class="glow"></div>
+    <div class="nav"><div class="brand"><span class="mark">XN</span> Xiaomi Notes</div><div class="actions"><span class="action">Settings</span><span class="action primary">Sync notes</span></div></div>
+    <div class="hero"><div class="eyebrow">Your private thought space</div><h2>捕捉想法，<br>连接每个瞬间。</h2><p>从小米云同步你的笔记，在一个更轻、更快、更专注的空间里重新发现它们。</p><div class="search">⌕&nbsp;&nbsp; 搜索笔记、分类或关键词</div></div>
+    <div class="cards"><div class="cardx"><div class="meta"><span>生活片段</span><i class="signal"></i></div><h3>傍晚六点的风</h3><p>今天路过江边，风里已经有了一点夏天的味道……</p></div><div class="cardx"><div class="meta"><span>阅读摘录</span><span>07.16</span></div><h3>最近读到的句子</h3><p>真正重要的东西，通常都需要慢慢浮现。</p></div><div class="cardx"><div class="meta"><span>旅行</span><span>07.12</span></div><h3>杭州散步路线</h3><p>从北山街出发，沿湖走到孤山。</p></div></div>
+  </div>
+  <div class="footnote"><span>点击画面表示保留这一配色</span><span class="tag">Palette 02 / 03</span></div>
+</div>
+
