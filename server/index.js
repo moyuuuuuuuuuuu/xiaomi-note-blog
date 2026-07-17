@@ -20,6 +20,10 @@ const dataDir = resolve(process.env.DATA_DIR || join(rootDir, 'data'));
 const distDir = resolve(process.env.DIST_DIR || join(rootDir, 'dist'));
 const port = Number(process.env.PORT || 8787);
 const adminPassword = process.env.ADMIN_PASSWORD || '';
+const configuredProxyHops = Number(process.env.TRUST_PROXY_HOPS || 0);
+const trustedProxyHops = Number.isInteger(configuredProxyHops) && configuredProxyHops > 0
+  ? configuredProxyHops
+  : 0;
 const sessionTtlMs = 12 * 60 * 60 * 1000;
 const sessions = new Map();
 const unlockSessions = createUnlockSessionStore({ ttlMs: 30 * 60 * 1000 });
@@ -94,7 +98,7 @@ function requireAdmin(req, res) {
 
 function getRequestMissingGrants(req, summary) {
   if (isSessionCookieValid(req.headers.cookie || '', sessions)) return [];
-  const ip = getClientIp(req);
+  const ip = getClientIp(req, { trustedProxyHops });
   return getMissingGrants(summary, (scope) => unlockSessions.has({
     cookieHeader: req.headers.cookie || '',
     ip,
@@ -183,7 +187,7 @@ async function handleApi(req, res, url) {
 
     if (req.method === 'POST' && url.pathname === '/api/password/verify') {
       const body = await readBody(req);
-      const ip = getClientIp(req);
+      const ip = getClientIp(req, { trustedProxyHops });
       const settings = await store.readSettings();
       const targetId = String(body.id || '');
       let expectedPassword = '';

@@ -40,5 +40,11 @@ verifyProtectedPassword({ limiter, ip: '5.6.7.8', inputPassword: 'bad', expected
 assert.equal(verifyProtectedPassword({ limiter, ip: '5.6.7.8', inputPassword: 'secret', expectedPassword: 'secret' }).ok, true);
 assert.equal(limiter.getStatus('5.6.7.8').remainingAttempts, 3);
 
-assert.equal(getClientIp({ headers: { 'x-forwarded-for': '9.9.9.9, 8.8.8.8' }, socket: { remoteAddress: '127.0.0.1' } }), '9.9.9.9');
+const forwardedRequest = {
+  headers: { 'x-forwarded-for': '9.9.9.9, 8.8.8.8' },
+  socket: { remoteAddress: '127.0.0.1' },
+};
+assert.equal(getClientIp(forwardedRequest), '127.0.0.1');
+assert.equal(getClientIp(forwardedRequest, { trustedProxyHops: 1 }), '8.8.8.8');
+assert.equal(getClientIp(forwardedRequest, { trustedProxyHops: 2 }), '9.9.9.9');
 assert.equal(getClientIp({ headers: {}, socket: { remoteAddress: '::1' } }), '::1');

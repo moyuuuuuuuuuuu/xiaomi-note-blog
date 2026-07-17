@@ -1,11 +1,19 @@
 import { timingSafeEqual } from 'node:crypto';
 
-export function getClientIp(req) {
-  const forwarded = req.headers?.['x-forwarded-for'];
-  if (typeof forwarded === 'string' && forwarded.trim()) {
-    return forwarded.split(',')[0].trim();
+export function getClientIp(req, { trustedProxyHops = 0 } = {}) {
+  const remoteAddress = req.socket?.remoteAddress || 'unknown';
+  if (!Number.isInteger(trustedProxyHops) || trustedProxyHops <= 0) {
+    return remoteAddress;
   }
-  return req.socket?.remoteAddress || 'unknown';
+
+  const forwarded = req.headers?.['x-forwarded-for'];
+  if (typeof forwarded !== 'string' || !forwarded.trim()) return remoteAddress;
+
+  const chain = [
+    ...forwarded.split(',').map((item) => item.trim()).filter(Boolean),
+    remoteAddress,
+  ];
+  return chain[Math.max(chain.length - trustedProxyHops - 1, 0)] || remoteAddress;
 }
 
 function safePasswordEqual(inputPassword, expectedPassword) {
