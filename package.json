@@ -8,7 +8,7 @@
     "dev": "vite",
     "server": "node server/index.js",
     "start": "node server/index.js",
-    "test": "node src/app/lib/noteIndex.test.mjs && node src/app/lib/dustParticles.test.mjs && node server/env.test.mjs && node server/storage.test.mjs && node server/auth.test.mjs && node server/passwordLock.test.mjs && node server/xiaomiImageCache.test.mjs && node src/app/lib/settings.test.mjs && node src/app/lib/xiaomiNotes.test.mjs && node src/app/lib/noteMarkdown.test.mjs && node src/app/lib/accessSession.test.mjs"
+    "test": "node src/app/lib/noteIndex.test.mjs && node src/app/lib/dustParticles.test.mjs && node server/env.test.mjs && node server/noteAccess.test.mjs && node server/storage.test.mjs && node server/auth.test.mjs && node server/passwordLock.test.mjs && node server/xiaomiImageCache.test.mjs && node src/app/lib/settings.test.mjs && node src/app/lib/xiaomiNotes.test.mjs && node src/app/lib/noteMarkdown.test.mjs && node src/app/lib/accessSession.test.mjs"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",
