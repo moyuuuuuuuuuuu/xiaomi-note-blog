@@ -92,6 +92,16 @@ function requireAdmin(req, res) {
   return false;
 }
 
+function getRequestMissingGrants(req, summary) {
+  if (isSessionCookieValid(req.headers.cookie || '', sessions)) return [];
+  const ip = getClientIp(req);
+  return getMissingGrants(summary, (scope) => unlockSessions.has({
+    cookieHeader: req.headers.cookie || '',
+    ip,
+    scope,
+  }));
+}
+
 function sendImage(req, res, image) {
   res.writeHead(200, {
     'content-type': image.contentType,
@@ -268,7 +278,11 @@ async function handleApi(req, res, url) {
         sendError(res, 404, '笔记不存在');
         return;
       }
-      sendJson(res, 200, { note: toNoteSummary(note, settings) });
+      const summary = toNoteSummary(note, settings);
+      sendJson(res, 200, {
+        note: summary,
+        requiredScopes: getRequestMissingGrants(req, summary),
+      });
       return;
     }
 
@@ -284,15 +298,7 @@ async function handleApi(req, res, url) {
         return;
       }
       const summary = toNoteSummary(note, settings);
-      const isAdmin = isSessionCookieValid(req.headers.cookie || '', sessions);
-      const ip = getClientIp(req);
-      const missingGrants = isAdmin
-        ? []
-        : getMissingGrants(summary, (scope) => unlockSessions.has({
-          cookieHeader: req.headers.cookie || '',
-          ip,
-          scope,
-        }));
+      const missingGrants = getRequestMissingGrants(req, summary);
       if (missingGrants.length > 0) {
         sendJson(res, 423, {
           error: '笔记尚未解锁',

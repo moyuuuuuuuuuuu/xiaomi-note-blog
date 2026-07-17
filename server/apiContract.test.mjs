@@ -86,7 +86,8 @@ try {
 
   const summaryResponse = await fetch(`${baseUrl}/api/notes/n1/summary`);
   assert.equal(summaryResponse.status, 200);
-  assert.deepEqual((await summaryResponse.json()).note, {
+  const summaryBody = await summaryResponse.json();
+  assert.deepEqual(summaryBody.note, {
     id: 'n1',
     title: 'Protected note',
     createTime: 1,
@@ -95,6 +96,7 @@ try {
     noteProtected: true,
     folderProtected: true,
   });
+  assert.deepEqual(summaryBody.requiredScopes, ['folder:Work', 'note:n1']);
 
   const lockedResponse = await fetch(`${baseUrl}/api/notes/n1`);
   assert.equal(lockedResponse.status, 423);
@@ -137,6 +139,11 @@ try {
   const detailBody = await detailResponse.json();
   assert.equal(detailBody.note.content, 'secret body');
   assert.equal('password' in detailBody.note, false);
+
+  const unlockedSummaryResponse = await fetch(`${baseUrl}/api/notes/n1/summary`, {
+    headers: { cookie: refreshedUnlockCookie },
+  });
+  assert.deepEqual((await unlockedSummaryResponse.json()).requiredScopes, []);
 
   const adminSettingsDenied = await fetch(`${baseUrl}/api/admin/settings`);
   assert.equal(adminSettingsDenied.status, 401);
