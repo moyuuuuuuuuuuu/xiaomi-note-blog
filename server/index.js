@@ -6,7 +6,9 @@ import { fileURLToPath } from 'node:url';
 import { createSession, getClearSessionCookie, getSessionCookie, isSessionCookieValid, verifyAdminPassword } from './auth.js';
 import { loadEnvFile } from './env.js';
 import { createPasswordAttemptLimiter, getClientIp, verifyProtectedPassword } from './passwordLock.js';
-import { createDataStore, getPublicSettings, mergeSyncedNotes } from './storage.js';
+import { createDataStore, getAdminSettings, getPublicSettings, mergeSyncedNotes } from './storage.js';
+import { getMissingGrants, sanitizeNoteDetail, toNoteSummary } from './noteAccess.js';
+import { createUnlockSessionStore, getUnlockSessionCookie } from './unlockSession.js';
 import { createXiaomiImageCache, prepareSyncedNotesWithImageCache } from './xiaomiImageCache.js';
 import { fetchXiaomiNoteImage, syncXiaomiNotesFromServer } from './xiaomi.js';
 
@@ -20,6 +22,7 @@ const port = Number(process.env.PORT || 8787);
 const adminPassword = process.env.ADMIN_PASSWORD || '';
 const sessionTtlMs = 12 * 60 * 60 * 1000;
 const sessions = new Map();
+const unlockSessions = createUnlockSessionStore({ ttlMs: 30 * 60 * 1000 });
 const passwordLimiter = createPasswordAttemptLimiter({
   maxAttempts: Number(process.env.PASSWORD_LOCK_MAX_ATTEMPTS || 5),
   lockMs: Number(process.env.PASSWORD_LOCK_MS || 24 * 60 * 60 * 1000),
@@ -51,9 +54,15 @@ function sendError(res, status, message) {
   sendJson(res, status, { error: message });
 }
 
-function sendPasswordVerifyResult(res, result) {
+function sendPasswordVerifyResult(res, result, unlockGrant) {
   if (result.ok) {
-    sendJson(res, 200, { ok: true });
+    const session = unlockSessions.grant(unlockGrant);
+    sendJson(
+      res,
+      200,
+      { ok: true },
+      { 'set-cookie': getUnlockSessionCookie(session.token) },
+    );
     return;
   }
   if (result.locked) {
@@ -128,6 +137,24 @@ async function handleApi(req, res, url) {
       return;
     }
 
+    if (req.method === 'GET' && url.pathname === '/api/admin/settings') {
+      if (!requireAdmin(req, res)) return;
+      sendJson(res, 200, getAdminSettings(await store.readSettings()));
+      return;
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/admin/notes/export') {
+      if (!requireAdmin(req, res)) return;
+      const [notes, settings] = await Promise.all([
+        store.readNotes(),
+        store.readSettings(),
+      ]);
+      sendJson(res, 200, {
+        notes: notes.map((note) => sanitizeNoteDetail(note, settings)),
+      });
+      return;
+    }
+
     if (req.method === 'POST' && url.pathname === '/api/admin/login') {
       const body = await readBody(req);
       if (!verifyAdminPassword(body.password, adminPassword)) {
@@ -148,14 +175,15 @@ async function handleApi(req, res, url) {
       const body = await readBody(req);
       const ip = getClientIp(req);
       const settings = await store.readSettings();
+      const targetId = String(body.id || '');
       let expectedPassword = '';
 
       if (body.scope === 'note') {
         const notes = await store.readNotes();
-        const note = notes.find((item) => item.id === String(body.id || ''));
+        const note = notes.find((item) => item.id === targetId);
         expectedPassword = note?.password || '';
       } else if (body.scope === 'folder') {
-        expectedPassword = settings.folderPasswords?.[String(body.id || '')] || '';
+        expectedPassword = settings.folderPasswords?.[targetId] || '';
       } else {
         sendError(res, 400, '密码验证类型无效');
         return;
@@ -166,12 +194,20 @@ async function handleApi(req, res, url) {
         return;
       }
 
-      sendPasswordVerifyResult(res, verifyProtectedPassword({
-        limiter: passwordLimiter,
-        ip,
-        inputPassword: body.password,
-        expectedPassword,
-      }));
+      sendPasswordVerifyResult(
+        res,
+        verifyProtectedPassword({
+          limiter: passwordLimiter,
+          ip,
+          inputPassword: body.password,
+          expectedPassword,
+        }),
+        {
+          cookieHeader: req.headers.cookie || '',
+          ip,
+          scope: `${body.scope}:${targetId}`,
+        },
+      );
       return;
     }
 
@@ -181,6 +217,7 @@ async function handleApi(req, res, url) {
     }
 
     if (req.method === 'POST' && url.pathname === '/api/settings') {
+      if (!requireAdmin(req, res)) return;
       const body = await readBody(req);
       const settings = await store.updateSettings({
         siteName: body.siteName,
@@ -190,7 +227,7 @@ async function handleApi(req, res, url) {
         selectedFolders: Array.isArray(body.selectedFolders) ? body.selectedFolders : [],
         folderPasswords: body.folderPasswords && typeof body.folderPasswords === 'object' ? body.folderPasswords : {},
       });
-      sendJson(res, 200, getPublicSettings(settings));
+      sendJson(res, 200, getAdminSettings(settings));
       return;
     }
 
@@ -210,19 +247,61 @@ async function handleApi(req, res, url) {
     }
 
     if (req.method === 'GET' && url.pathname === '/api/notes') {
-      sendJson(res, 200, { notes: await store.readNotes() });
+      const [notes, settings] = await Promise.all([
+        store.readNotes(),
+        store.readSettings(),
+      ]);
+      sendJson(res, 200, {
+        notes: notes.map((note) => toNoteSummary(note, settings)),
+      });
+      return;
+    }
+
+    const noteSummaryMatch = url.pathname.match(/^\/api\/notes\/([^/]+)\/summary$/);
+    if (req.method === 'GET' && noteSummaryMatch) {
+      const [notes, settings] = await Promise.all([
+        store.readNotes(),
+        store.readSettings(),
+      ]);
+      const note = notes.find((item) => item.id === decodeURIComponent(noteSummaryMatch[1]));
+      if (!note) {
+        sendError(res, 404, '笔记不存在');
+        return;
+      }
+      sendJson(res, 200, { note: toNoteSummary(note, settings) });
       return;
     }
 
     const noteMatch = url.pathname.match(/^\/api\/notes\/([^/]+)$/);
     if (req.method === 'GET' && noteMatch) {
-      const notes = await store.readNotes();
+      const [notes, settings] = await Promise.all([
+        store.readNotes(),
+        store.readSettings(),
+      ]);
       const note = notes.find((item) => item.id === decodeURIComponent(noteMatch[1]));
       if (!note) {
         sendError(res, 404, '笔记不存在');
         return;
       }
-      sendJson(res, 200, { note });
+      const summary = toNoteSummary(note, settings);
+      const isAdmin = isSessionCookieValid(req.headers.cookie || '', sessions);
+      const ip = getClientIp(req);
+      const missingGrants = isAdmin
+        ? []
+        : getMissingGrants(summary, (scope) => unlockSessions.has({
+          cookieHeader: req.headers.cookie || '',
+          ip,
+          scope,
+        }));
+      if (missingGrants.length > 0) {
+        sendJson(res, 423, {
+          error: '笔记尚未解锁',
+          note: summary,
+          requiredScopes: missingGrants,
+        });
+        return;
+      }
+      sendJson(res, 200, { note: sanitizeNoteDetail(note, settings) });
       return;
     }
 
@@ -233,7 +312,9 @@ async function handleApi(req, res, url) {
       const notes = await store.readNotes();
       const nextNotes = notes.map((note) => (note.id === id ? { ...note, ...body, id } : note));
       await store.writeNotes(nextNotes);
-      sendJson(res, 200, { note: nextNotes.find((note) => note.id === id) });
+      const updatedNote = nextNotes.find((note) => note.id === id);
+      const settings = await store.readSettings();
+      sendJson(res, 200, { note: toNoteSummary(updatedNote, settings) });
       return;
     }
 
@@ -267,7 +348,9 @@ async function handleApi(req, res, url) {
       const mergedNotes = mergeSyncedNotes(await store.readNotes(), prepared.notes);
       await imageCache.updateReferences(mergedNotes);
       await store.writeNotes(mergedNotes);
-      sendJson(res, 200, { notes: mergedNotes });
+      sendJson(res, 200, {
+        notes: mergedNotes.map((note) => toNoteSummary(note, settings)),
+      });
       return;
     }
 

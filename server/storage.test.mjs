@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import {
   createDataStore,
   defaultSettings,
+  getAdminSettings,
   getPublicSettings,
   mergeSyncedNotes,
 } from './storage.js';
@@ -23,6 +24,7 @@ try {
     logoUrl: 'https://example.com/logo.png',
     password: '',
     selectedFolders: ['生活'],
+    folderPasswords: { 生活: 'folder-secret', 公开: '' },
     miCookie: 'serviceToken=secret-cookie',
   });
 
@@ -35,9 +37,23 @@ try {
     password: '',
     selectedFolders: ['生活'],
     folderPasswords: {},
+    protectedFolders: ['生活'],
     hasMiCookie: true,
     miCookieUpdatedAt: settings.miCookieUpdatedAt,
   });
+  assert.deepEqual(getAdminSettings(settings), {
+    siteName: '碎碎念',
+    siteDescription: '从小米笔记同步来的日常记录',
+    logoUrl: 'https://example.com/logo.png',
+    password: '',
+    selectedFolders: ['生活'],
+    folderPasswords: { 生活: 'folder-secret', 公开: '' },
+    protectedFolders: ['生活'],
+    hasMiCookie: true,
+    miCookieUpdatedAt: settings.miCookieUpdatedAt,
+  });
+  assert.equal('miCookie' in getPublicSettings(settings), false);
+  assert.equal('miCookie' in getAdminSettings(settings), false);
 
   await store.writeNotes([{ id: '1', title: 'A', content: 'B', createTime: 1, modifyTime: 2 }]);
   assert.deepEqual((await store.readNotes()).map((note) => note.id), ['1']);

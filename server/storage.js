@@ -32,9 +32,19 @@ export function getPublicSettings(settings) {
     logoUrl: settings.logoUrl || '',
     password: settings.password || '',
     selectedFolders: settings.selectedFolders || [],
-    folderPasswords: settings.folderPasswords || {},
+    folderPasswords: {},
+    protectedFolders: Object.entries(settings.folderPasswords || {})
+      .filter(([, password]) => Boolean(password))
+      .map(([folder]) => folder),
     hasMiCookie: Boolean(settings.miCookie),
     miCookieUpdatedAt: settings.miCookieUpdatedAt || null,
+  };
+}
+
+export function getAdminSettings(settings) {
+  return {
+    ...getPublicSettings(settings),
+    folderPasswords: { ...(settings.folderPasswords || {}) },
   };
 }
 
