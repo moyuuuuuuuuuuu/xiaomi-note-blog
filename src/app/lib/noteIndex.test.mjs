@@ -7,7 +7,9 @@ const notes = [
   { id: '3', title: '无分类', content: '零散内容', modifyTime: Date.UTC(2026, 6, 15) },
 ];
 
-assert.deepEqual(filterNotes(notes, '江边', 'all').map((note) => note.id), ['1']);
+assert.deepEqual(filterNotes(notes, '江边', 'all').map((note) => note.id), []);
+assert.deepEqual(filterNotes(notes, '傍晚', 'all').map((note) => note.id), ['1']);
+assert.deepEqual(filterNotes(notes, '生活', 'all').map((note) => note.id), ['1']);
 assert.deepEqual(filterNotes(notes, '', '阅读').map((note) => note.id), ['2']);
 assert.deepEqual(collectFolders(notes), [
   { name: '生活', count: 1 },

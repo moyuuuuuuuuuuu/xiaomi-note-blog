@@ -3,7 +3,7 @@ export function filterNotes(notes, searchTerm, selectedFolder) {
 
   return notes.filter((note) => {
     const matchesFolder = selectedFolder === 'all' || note.folder === selectedFolder;
-    const haystack = `${note.title}\n${note.content}`.toLocaleLowerCase('zh-CN');
+    const haystack = `${note.title}\n${note.folder || ''}`.toLocaleLowerCase('zh-CN');
     return matchesFolder && (!query || haystack.includes(query));
   });
 }

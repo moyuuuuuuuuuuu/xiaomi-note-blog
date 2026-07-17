@@ -9,15 +9,21 @@ import { router } from './routes';
 import { Toaster } from './components/ui/sonner';
 import { toast } from 'sonner';
 
-export interface Note {
+export interface NoteSummary {
   id: string;
   title: string;
-  content: string;
   createTime: number;
   modifyTime: number;
-  folder?: string;
-  password?: string; // 单个笔记的密码
+  folder: string;
+  noteProtected: boolean;
+  folderProtected: boolean;
 }
+
+export interface NoteDetail extends NoteSummary {
+  content: string;
+}
+
+export type Note = NoteDetail & { password?: string };
 
 export interface Settings {
   siteName: string;
@@ -26,6 +32,7 @@ export interface Settings {
   password: string;
   selectedFolders: string[];
   folderPasswords: { [folder: string]: string }; // 分类密码
+  protectedFolders: string[];
   hasMiCookie?: boolean;
   miCookieUpdatedAt?: number | null;
 }

@@ -1,3 +1,12 @@
+export class ApiError extends Error {
+  constructor(status, data = {}) {
+    super(data.error || `请求失败：HTTP ${status}`);
+    this.name = 'ApiError';
+    this.status = status;
+    this.data = data;
+  }
+}
+
 async function request(path, options = {}) {
   const response = await fetch(path, {
     credentials: 'same-origin',
@@ -10,7 +19,7 @@ async function request(path, options = {}) {
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(data.error || `请求失败：HTTP ${response.status}`);
+    throw new ApiError(response.status, data);
   }
   return data;
 }
@@ -32,6 +41,18 @@ export function fetchNotes() {
 
 export function fetchNote(noteId) {
   return request(`/api/notes/${encodeURIComponent(noteId)}`);
+}
+
+export function fetchNoteSummary(noteId) {
+  return request(`/api/notes/${encodeURIComponent(noteId)}/summary`);
+}
+
+export function fetchAdminSettings() {
+  return request('/api/admin/settings');
+}
+
+export function fetchExportNotes() {
+  return request('/api/admin/notes/export');
 }
 
 export function updateNote(note) {
