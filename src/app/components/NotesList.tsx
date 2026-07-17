@@ -8,9 +8,11 @@ import { Badge } from './ui/badge';
 import { NotePasswordDialog } from './NotePasswordDialog';
 import { SetNotePasswordDialog } from './SetNotePasswordDialog';
 import { NoteContent } from './NoteContent';
+import { NoteIndex } from './NoteIndex';
 import type { Note, Settings as AppSettings } from '../App';
 import { verifyProtectedPassword } from '../lib/api';
 import { stripNoteMarkdown } from '../lib/noteMarkdown.js';
+import { collectFolders, filterNotes } from '../lib/noteIndex.js';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { toast } from 'sonner';
@@ -197,15 +199,10 @@ export function NotesList({ notes, settings, canManageNotes, onUpdateNote, onDel
     return !!settings.folderPasswords?.[folder];
   };
 
-  const filteredNotes = notes.filter(note => {
-    const matchesSearch = note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         note.content.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFolder = selectedFolder === 'all' || note.folder === selectedFolder;
-    return matchesSearch && matchesFolder;
-  });
+  const filteredNotes = filterNotes(notes, searchTerm, selectedFolder) as Note[];
 
   const selectedNote = selectedNoteId ? notes.find(n => n.id === selectedNoteId) : null;
-  const folders = Array.from(new Set(notes.map(n => n.folder).filter(Boolean))) as string[];
+  const folders = collectFolders(notes) as Array<{ name: string; count: number }>;
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleString('zh-CN', {
@@ -281,21 +278,82 @@ export function NotesList({ notes, settings, canManageNotes, onUpdateNote, onDel
     }
   };
 
+  const renderNoteActions = (note: Note) => {
+    if (!canManageNotes) return null;
+
+    return (
+      <div className="note-index-actions">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label={`管理${note.title}`}>
+              <MoreVertical className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setNotePasswordDialog({ open: true, note })}>
+              <Shield className="size-4 mr-2" />
+              {note.password ? '修改笔记密码' : '设置笔记密码'}
+            </DropdownMenuItem>
+            {note.password && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setPasswordDialog({
+                  open: true,
+                  scope: 'note',
+                  id: note.id,
+                  title: '验证密码',
+                  description: `请输入笔记"${note.title}"的密码以移除密码保护`,
+                  onSuccess: () => {
+                    onUpdateNote({ ...note, password: undefined });
+                    toast.success('密码保护已移除');
+                    setUnlockedNotes((previous) => {
+                      const next = new Set(previous);
+                      next.delete(note.id);
+                      return next;
+                    });
+                  },
+                })}>
+                  <LockOpen className="size-4 mr-2" />
+                  移除密码保护
+                </DropdownMenuItem>
+              </>
+            )}
+            {onDeleteNote && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-red-600" onClick={() => {
+                  if (confirm(`确定要删除笔记"${note.title}"吗？`)) {
+                    onDeleteNote(note.id);
+                    if (selectedNoteId === note.id) setSelectedNoteId(null);
+                  }
+                }}>
+                  <Trash2 className="size-4 mr-2" />
+                  删除笔记
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    );
+  };
+
   return (
-    <div className="space-y-6">
+    <section className="notes-workspace" aria-label="笔记归档">
       {/* 搜索和导出栏 */}
-      <Card className="p-4">
+      <div className="editorial-toolbar">
         <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+          <label className="editorial-search flex-1">
+            <span className="sr-only">搜索笔记</span>
+            <Search aria-hidden="true" />
             <Input
               type="text"
               placeholder="搜索笔记标题或内容..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
             />
-          </div>
+          </label>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="gap-2 whitespace-nowrap">
@@ -320,45 +378,43 @@ export function NotesList({ notes, settings, canManageNotes, onUpdateNote, onDel
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </Card>
+      </div>
 
       {/* 分类标签 */}
       {folders.length > 0 && (
-        <div className={isMobile ? 'overflow-x-auto pb-1' : 'flex flex-wrap gap-2'}>
-          <div className={isMobile ? 'flex w-max min-w-full gap-2 px-1' : 'flex flex-wrap gap-2'}>
-              <Badge
-                variant={selectedFolder === 'all' ? 'default' : 'outline'}
-                className="cursor-pointer whitespace-nowrap px-4 py-2 text-sm"
+        <div className="folder-index" aria-label="按分类筛选">
+              <button
+                type="button"
+                aria-pressed={selectedFolder === 'all'}
                 onClick={() => setSelectedFolder('all')}
               >
                 全部 ({notes.length})
-              </Badge>
+              </button>
               {folders.map(folder => (
-                <Badge
-                  key={folder}
-                  variant={selectedFolder === folder ? 'default' : 'outline'}
-                  className="cursor-pointer whitespace-nowrap px-4 py-2 text-sm flex items-center gap-1"
-                  onClick={() => setSelectedFolder(folder)}
+                <button
+                  type="button"
+                  key={folder.name}
+                  aria-pressed={selectedFolder === folder.name}
+                  onClick={() => setSelectedFolder(folder.name)}
                 >
-                  {isFolderLocked(folder) && <Lock className="size-3" />}
-                  {folder} ({notes.filter(n => n.folder === folder).length})
-                </Badge>
+                  {isFolderLocked(folder.name) && <Lock className="size-3" />}
+                  {folder.name} ({folder.count})
+                </button>
               ))}
-            </div>
         </div>
       )}
 
       {/* 笔记列表和内容 */}
       {filteredNotes.length === 0 ? (
-        <Card className="p-12 text-center">
+        <div className="minimal-empty py-24 text-center">
           <FileText className="size-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">暂无笔记</h3>
           <p className="text-gray-500">点击顶部同步按钮获取笔记</p>
-        </Card>
+        </div>
       ) : (
-        <div className="grid md:grid-cols-[400px_1fr] gap-4 md:h-[calc(100vh-280px)]">
+        <div className="notes-layout">
           {/* 左侧列表 */}
-          <Card className="overflow-hidden flex flex-col md:col-span-1 col-span-full">
+          <div className="note-index-panel">
             <div className="md:flex-1 md:overflow-y-auto">
               {filteredNotes.length === 0 ? (
                 <div className="p-8 text-center">
@@ -367,7 +423,15 @@ export function NotesList({ notes, settings, canManageNotes, onUpdateNote, onDel
                   <p className="text-sm text-gray-500">尝试调整搜索条件</p>
                 </div>
               ) : (
-                <div className="divide-y">
+                <>
+                <NoteIndex
+                  notes={filteredNotes}
+                  selectedNoteId={selectedNoteId}
+                  isNoteLocked={isNoteLocked}
+                  onSelect={handleNoteClick}
+                  renderActions={renderNoteActions}
+                />
+                <div className="legacy-note-list" aria-hidden="true">
                   {filteredNotes.map(note => (
                     <div
                       key={note.id}
@@ -492,13 +556,14 @@ export function NotesList({ notes, settings, canManageNotes, onUpdateNote, onDel
                     </div>
                   ))}
                 </div>
+                </>
               )}
             </div>
-          </Card>
+          </div>
 
           {/* 右侧内容 - 仅桌面端显示 */}
           {!isMobile && (
-            <Card className="overflow-hidden flex flex-col">
+            <aside className="note-preview-panel">
               {selectedNote ? (
                 isNoteLocked(selectedNote) ? (
                   <div className="flex-1 flex items-center justify-center">
@@ -559,7 +624,7 @@ export function NotesList({ notes, settings, canManageNotes, onUpdateNote, onDel
                   </div>
                 </div>
               )}
-            </Card>
+            </aside>
           )}
         </div>
       )}
@@ -606,6 +671,6 @@ export function NotesList({ notes, settings, canManageNotes, onUpdateNote, onDel
         }}
         note={notePasswordDialog.note}
       />
-    </div>
+    </section>
   );
 }
