@@ -5,6 +5,8 @@ import { Footer } from '../components/Footer';
 import { PasswordDialog } from '../components/PasswordDialog';
 import { SettingsDialog } from '../components/SettingsDialog';
 import { AdminPasswordDialog } from '../components/AdminPasswordDialog';
+import { DustParticles } from '../components/DustParticles';
+import { HomeHero } from '../components/HomeHero';
 import { toast } from 'sonner';
 import type { Note, Settings as AppSettings } from '../App';
 import { deleteNote, fetchAdminSession, fetchNotes, fetchSettings, loginAdmin, saveSettings, syncNotes, updateNote } from '../lib/api';
@@ -125,10 +127,10 @@ export function HomePage() {
   // 等待设置加载完成
   if (!isSettingsLoaded) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full size-12 border-4 border-blue-500 border-t-transparent mb-4"></div>
-          <p className="text-gray-600">加载中...</p>
+      <div className="minimal-loading min-h-screen">
+        <div>
+          <p>LOADING NOTES</p>
+          <span aria-hidden="true" />
         </div>
       </div>
     );
@@ -145,7 +147,10 @@ export function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex flex-col">
+    <div className="minimal-page min-h-screen flex flex-col">
+      <div className="home-atmosphere" aria-hidden="true">
+        <DustParticles className="home-particles" />
+      </div>
       <Header 
         onSync={handleSync}
         isSyncing={isSyncing}
@@ -156,7 +161,8 @@ export function HomePage() {
         logoUrl={settings.logoUrl}
       />
       
-      <main className="flex-1 container mx-auto px-4 py-6 md:py-8 max-w-6xl">
+      <main className="editorial-container flex-1">
+        <HomeHero siteName={settings.siteName} siteDescription={settings.siteDescription} noteCount={notes.length} />
         <NotesList 
           notes={notes} 
           settings={settings}
