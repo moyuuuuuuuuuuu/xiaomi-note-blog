@@ -27,15 +27,12 @@ export function PasswordDialog({ expectedPassword, onVerified }: PasswordDialogP
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md p-8">
+    <div className="password-gate min-h-screen flex items-center justify-center p-4">
+      <Card className="password-gate-card w-full max-w-md p-8">
         <div className="flex flex-col items-center gap-6">
           {/* Logo */}
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full blur-xl opacity-20 animate-pulse"></div>
-            <div className="relative bg-gradient-to-br from-blue-500 to-purple-600 p-6 rounded-full">
-              <Lock className="size-12 text-white" />
-            </div>
+          <div className="password-gate-mark">
+            <Lock className="size-9" />
           </div>
 
           {/* 标题 */}
@@ -81,7 +78,7 @@ export function PasswordDialog({ expectedPassword, onVerified }: PasswordDialogP
 
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+              className="w-full"
               disabled={!password}
             >
               验证访问
