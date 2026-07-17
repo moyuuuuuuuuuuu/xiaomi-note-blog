@@ -7,7 +7,7 @@ interface NoteContentProps {
 export function NoteContent({ content }: NoteContentProps) {
   return (
     <div
-      className="note-content text-gray-700 font-sans leading-relaxed"
+      className="note-content"
       dangerouslySetInnerHTML={{ __html: renderNoteMarkdown(content) }}
     />
   );

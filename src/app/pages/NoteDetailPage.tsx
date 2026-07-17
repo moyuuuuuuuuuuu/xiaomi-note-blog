@@ -199,7 +199,7 @@ export function NoteDetailPage() {
 
   if (isLoading || !note) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="minimal-loading min-h-screen">
         <div className="text-center">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">{isLoading ? '加载中...' : '笔记不存在'}</h3>
           <Button onClick={() => navigate('/')}>返回列表</Button>
@@ -209,10 +209,10 @@ export function NoteDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="detail-page min-h-screen flex flex-col">
       {/* 顶部导航栏 */}
-      <div className="bg-white border-b sticky top-0 z-10">
-        <div className="flex items-center justify-between p-4">
+      <div className="detail-nav">
+        <div className="editorial-container flex items-center justify-between py-4">
           <Button
             variant="ghost"
             size="sm"
@@ -284,14 +284,11 @@ export function NoteDetailPage() {
       </div>
 
       {/* 笔记内容 */}
-      <div className="flex-1 container max-w-4xl mx-auto p-4">
-        <Card className="overflow-hidden">
+      <main className="detail-reading flex-1">
           {isNoteLocked() ? (
             <div className="flex items-center justify-center min-h-[400px]">
               <div className="text-center space-y-4">
-                <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-6 rounded-full w-fit mx-auto">
-                  <Lock className="size-12 text-white" />
-                </div>
+                <Lock className="size-10 mx-auto text-muted-foreground" />
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">笔记已加密</h3>
                   <p className="text-gray-500">请输入密码查看内容</p>
@@ -300,9 +297,9 @@ export function NoteDetailPage() {
             </div>
           ) : (
             <>
-              <div className="p-6 border-b bg-white">
+              <header className="detail-heading">
                 <div className="flex items-start justify-between gap-4 mb-3">
-                  <h1 className="text-2xl font-semibold text-gray-900 flex-1">
+                  <h1 className="flex-1">
                     {note.title}
                   </h1>
                   {note.password && (
@@ -312,7 +309,7 @@ export function NoteDetailPage() {
                     </Badge>
                   )}
                 </div>
-                <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500">
+                <div className="detail-meta">
                   {note.folder && (
                     <Badge variant="secondary" className="gap-1">
                       <FolderOpen className="size-3" />
@@ -330,15 +327,14 @@ export function NoteDetailPage() {
                     修改: {formatDate(note.modifyTime)}
                   </span>
                 </div>
-              </div>
+              </header>
               
-              <div className="p-6">
+              <article className="detail-body">
                 <NoteContent content={note.content} />
-              </div>
+              </article>
             </>
           )}
-        </Card>
-      </div>
+      </main>
 
       {/* 密码验证对话框 */}
       <NotePasswordDialog
