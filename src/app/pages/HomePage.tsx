@@ -8,8 +8,8 @@ import { AdminPasswordDialog } from '../components/AdminPasswordDialog';
 import { DustParticles } from '../components/DustParticles';
 import { HomeHero } from '../components/HomeHero';
 import { toast } from 'sonner';
-import type { Note, Settings as AppSettings } from '../App';
-import { deleteNote, fetchAdminSession, fetchNotes, fetchSettings, loginAdmin, saveSettings, syncNotes, updateNote } from '../lib/api';
+import type { NoteSummary, Settings as AppSettings } from '../App';
+import { deleteNote, fetchAdminSession, fetchAdminSettings, fetchNotes, fetchSettings, loginAdmin, saveSettings, syncNotes, updateNote } from '../lib/api';
 import { isAccessPasswordAuthenticated, markAccessPasswordAuthenticated } from '../lib/accessSession';
 
 const defaultSettings: AppSettings = {
@@ -19,12 +19,13 @@ const defaultSettings: AppSettings = {
   password: '',
   selectedFolders: [],
   folderPasswords: {},
+  protectedFolders: [],
   hasMiCookie: false,
   miCookieUpdatedAt: null,
 };
 
 export function HomePage() {
-  const [notes, setNotes] = useState<Note[]>([]);
+  const [notes, setNotes] = useState<NoteSummary[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -36,12 +37,14 @@ export function HomePage() {
   // 加载设置
   useEffect(() => {
     Promise.all([fetchSettings(), fetchAdminSession()])
-      .then(([serverSettings, adminSession]) => {
-        const nextSettings = { ...defaultSettings, ...serverSettings };
+      .then(async ([serverSettings, adminSession]) => {
+        const authenticated = Boolean(adminSession.authenticated);
+        const editableSettings = authenticated ? await fetchAdminSettings() : serverSettings;
+        const nextSettings = { ...defaultSettings, ...editableSettings };
         setSettings(nextSettings);
         document.title = nextSettings.siteName || defaultSettings.siteName;
         setIsAuthenticated(isAccessPasswordAuthenticated(nextSettings.password));
-        setIsAdminAuthenticated(Boolean(adminSession.authenticated));
+        setIsAdminAuthenticated(authenticated);
       })
       .catch((error) => {
         console.error('加载设置失败:', error);
@@ -75,13 +78,7 @@ export function HomePage() {
     try {
       const response = await syncNotes();
       const syncedNotes = response.notes || [];
-      setNotes(prevNotes => {
-        const currentById = new Map(prevNotes.map(note => [note.id, note]));
-        return syncedNotes.map((note: Note) => {
-          const current = currentById.get(note.id);
-          return current?.password && !note.password ? { ...note, password: current.password } : note;
-        });
-      });
+      setNotes(syncedNotes);
       toast.success(`同步成功！共同步 ${syncedNotes.length} 条笔记`);
     } catch (error) {
       console.error('同步失败:', error);
@@ -108,9 +105,15 @@ export function HomePage() {
     toast.success('登录成功');
   };
 
-  const handleOpenSettings = () => {
+  const handleOpenSettings = async () => {
     if (isAdminAuthenticated) {
-      setShowSettings(true);
+      try {
+        const editableSettings = await fetchAdminSettings();
+        setSettings({ ...defaultSettings, ...editableSettings });
+        setShowSettings(true);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : '加载管理员设置失败');
+      }
       return;
     }
     setShowAdminLogin(true);
@@ -118,6 +121,8 @@ export function HomePage() {
 
   const handleAdminVerified = async (password: string) => {
     await loginAdmin(password);
+    const editableSettings = await fetchAdminSettings();
+    setSettings({ ...defaultSettings, ...editableSettings });
     setIsAdminAuthenticated(true);
     setShowAdminLogin(false);
     setShowSettings(true);
@@ -155,7 +160,7 @@ export function HomePage() {
         onSync={handleSync}
         isSyncing={isSyncing}
         canSync={isAdminAuthenticated}
-        onOpenSettings={handleOpenSettings}
+        onOpenSettings={() => void handleOpenSettings()}
         siteName={settings.siteName}
         siteDescription={settings.siteDescription}
         logoUrl={settings.logoUrl}
@@ -180,7 +185,7 @@ export function HomePage() {
           onDeleteNote={async (noteId) => {
             try {
               await deleteNote(noteId);
-              setNotes(notes.filter(n => n.id !== noteId));
+              setNotes((previous) => previous.filter((note) => note.id !== noteId));
               toast.success('笔记已删除');
             } catch (error) {
               toast.error(error instanceof Error ? error.message : '删除笔记失败');
@@ -197,7 +202,7 @@ export function HomePage() {
         settings={settings}
         onSave={handleSaveSettings}
         onAdminAuthenticated={() => setIsAdminAuthenticated(true)}
-        allFolders={Array.from(new Set(notes.map(n => n.folder).filter(Boolean))) as string[]}
+        allFolders={Array.from(new Set(notes.map((note) => note.folder).filter(Boolean)))}
       />
       <AdminPasswordDialog
         open={showAdminLogin}

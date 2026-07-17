@@ -25,6 +25,10 @@ export interface NoteDetail extends NoteSummary {
 
 export type Note = NoteDetail & { password?: string };
 
+export type NoteUpdate = { id: string } & Partial<Pick<NoteDetail, 'title' | 'content' | 'folder' | 'createTime' | 'modifyTime'>> & {
+  password?: string;
+};
+
 export interface Settings {
   siteName: string;
   siteDescription: string;

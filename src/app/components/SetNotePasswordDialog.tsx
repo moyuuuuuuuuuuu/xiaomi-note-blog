@@ -4,13 +4,13 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
-import type { Note } from '../App';
+import type { NoteSummary } from '../App';
 
 interface SetNotePasswordDialogProps {
   open: boolean;
   onClose: () => void;
   onSetPassword: (password: string) => void | Promise<void>;
-  note: Note | null;
+  note: NoteSummary | null;
 }
 
 export function SetNotePasswordDialog({ 
@@ -72,7 +72,7 @@ export function SetNotePasswordDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Lock className="size-5 text-blue-600" />
-            {note.password ? '修改笔记密码' : '设置笔记密码'}
+            {note.noteProtected ? '修改笔记密码' : '设置笔记密码'}
           </DialogTitle>
           <DialogDescription>
             为笔记 "{note.title}" 设置访问密码
@@ -113,7 +113,7 @@ export function SetNotePasswordDialog({
             <p className="text-sm text-red-500">{error}</p>
           )}
 
-          {note.password && (
+          {note.noteProtected && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
               <p className="text-sm text-blue-800">
                 💡 此笔记已设置密码，保存后将使用新密码
