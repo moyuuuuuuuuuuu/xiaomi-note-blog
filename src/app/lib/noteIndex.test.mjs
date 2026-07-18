@@ -3,7 +3,8 @@ import {
   collectFolders,
   filterNotes,
   formatIndexDate,
-  getNoteCardLayout,
+  getNoteRowLayout,
+  groupNotesByRowPattern,
   toIndexNumber,
 } from './noteIndex.js';
 
@@ -26,10 +27,47 @@ assert.equal(toIndexNumber(0), '01');
 assert.equal(toIndexNumber(11), '12');
 
 assert.deepEqual(
-  Array.from({ length: 6 }, (_, index) => getNoteCardLayout(index).variant),
-  ['hero', 'wide', 'medium', 'compact', 'tall', 'closing'],
+  Array.from({ length: 6 }, (_, rowIndex) => {
+    const { count, spans, direction } = getNoteRowLayout(rowIndex);
+    return { count, spans, direction };
+  }),
+  [
+    { count: 3, spans: [5, 3, 4], direction: 'forward' },
+    { count: 4, spans: [2, 4, 3, 3], direction: 'forward' },
+    { count: 2, spans: [7, 5], direction: 'forward' },
+    { count: 3, spans: [4, 3, 5], direction: 'reverse' },
+    { count: 4, spans: [3, 3, 4, 2], direction: 'reverse' },
+    { count: 2, spans: [5, 7], direction: 'reverse' },
+  ],
 );
-assert.deepEqual(getNoteCardLayout(0), { variant: 'hero', direction: 'forward', slot: 0, group: 0 });
-assert.deepEqual(getNoteCardLayout(6), { variant: 'hero', direction: 'reverse', slot: 0, group: 1 });
-assert.deepEqual(getNoteCardLayout(12), { variant: 'hero', direction: 'forward', slot: 0, group: 2 });
-assert.deepEqual(getNoteCardLayout(-1), { variant: 'hero', direction: 'forward', slot: 0, group: 0 });
+
+assert.deepEqual(getNoteRowLayout(-1), {
+  rowIndex: 0,
+  patternIndex: 0,
+  cycle: 0,
+  count: 3,
+  spans: [5, 3, 4],
+  offsets: [0, 8, 2],
+  direction: 'forward',
+});
+
+const layoutNotes = Array.from({ length: 13 }, (_, index) => ({ id: String(index + 1) }));
+const groupedRows = groupNotesByRowPattern(layoutNotes);
+assert.deepEqual(groupedRows.map((row) => row.entries.length), [3, 4, 2, 3, 1]);
+assert.deepEqual(
+  groupedRows.flatMap((row) => row.entries.map((entry) => entry.index)),
+  Array.from({ length: 13 }, (_, index) => index),
+);
+assert.deepEqual(
+  groupedRows[0].entries.map(({ columnStart, columnSpan, offset }) => ({ columnStart, columnSpan, offset })),
+  [
+    { columnStart: 1, columnSpan: 5, offset: 0 },
+    { columnStart: 6, columnSpan: 3, offset: 8 },
+    { columnStart: 9, columnSpan: 4, offset: 2 },
+  ],
+);
+assert.deepEqual(
+  groupedRows[4].entries.map(({ index, columnStart, columnSpan, offset }) => ({ index, columnStart, columnSpan, offset })),
+  [{ index: 12, columnStart: 10, columnSpan: 3, offset: 3 }],
+);
+assert.deepEqual(groupNotesByRowPattern([]), []);
