@@ -506,9 +506,10 @@ Use `apply_patch` to create the untracked preview fixtures below at `/tmp/xiaomi
 Start the built application from the worktree, using Windows Node in this WSL environment:
 
 ```bash
+WSLENV="${WSLENV:+$WSLENV:}PORT/w:DATA_DIR/pw:DIST_DIR/pw" \
 PORT=8791 \
-DATA_DIR="$(wslpath -w /tmp/xiaomi-note-dense-preview)" \
-DIST_DIR="$(wslpath -w "$PWD/dist")" \
+DATA_DIR=/tmp/xiaomi-note-dense-preview \
+DIST_DIR="$PWD/dist" \
 /mnt/d/nvm/nvm4w/nodejs/node.exe server/index.js
 ```
 
