@@ -55,6 +55,7 @@ assert.equal(
   webLinkNote.content,
   '[网页链接](https://www.filemail.com/d/example?id=1&source=note)',
 );
+assert.equal(webLinkNote.title, '网页链接');
 
 const legacyImageNote = normalizeXiaomiNote(
   {

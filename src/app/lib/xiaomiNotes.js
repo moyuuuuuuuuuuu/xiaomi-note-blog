@@ -15,6 +15,12 @@ function stripTags(value) {
   return value.replace(/<[^>]+>/g, '');
 }
 
+function normalizeNoteTitle(value) {
+  return stripTags(String(value))
+    .replace(/!?(?:\[([^\]]*)\])\((?:[^()]|\([^)]*\))*\)/g, '$1')
+    .trim();
+}
+
 function decodeHtmlAttribute(value = '') {
   return value
     .replace(/&amp;/g, '&')
@@ -92,7 +98,7 @@ export function normalizeXiaomiNote(rawNote, folders = {}) {
 
   return {
     id: String(rawNote.id),
-    title: stripTags(String(title)).trim() || '未命名',
+    title: normalizeNoteTitle(title) || '未命名',
     content,
     createTime: Number(rawNote.createDate || rawNote.createTime || 0),
     modifyTime: Number(rawNote.modifyDate || rawNote.modifyTime || rawNote.createDate || 0),
