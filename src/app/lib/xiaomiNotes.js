@@ -41,6 +41,13 @@ function normalizeImageTag(tag) {
   return `![${alt}](${src})`;
 }
 
+function normalizeLinkTag(tag, inner = '') {
+  const href = getTagAttribute(tag, ['href', 'url']);
+  const label = stripTags(inner).trim() || href;
+  if (!href || !label) return label;
+  return `[${label.replace(/[\[\]]/g, '')}](${href})`;
+}
+
 function normalizeXiaomiImage(fileId) {
   return `![图片](/api/xiaomi-image/${encodeURIComponent(fileId)})`;
 }
@@ -48,6 +55,7 @@ function normalizeXiaomiImage(fileId) {
 export function normalizeNoteContent(content = '') {
   return content
     .replace(/<new-format\s*\/>/g, '')
+    .replace(/<a\b[^>]*>([\s\S]*?)<\/a>/gi, (tag, inner) => normalizeLinkTag(tag, inner))
     .replace(/<(?:img|image|photo|picture)\b[^>]*\/?>/gi, normalizeImageTag)
     .replace(/(?:^|\s)☺\s+([0-9]+[.][A-Za-z0-9_-]+)/g, (_match, fileId) => normalizeXiaomiImage(fileId))
     .replace(/<hr\s*\/>/g, '---')

@@ -40,6 +40,22 @@ const imageNote = normalizeXiaomiNote(
 
 assert.equal(imageNote.content, 'Before\n![图片](https://example.com/a.jpg)\nAfter');
 
+const webLinkNote = normalizeXiaomiNote(
+  {
+    id: 'web-link-note',
+    createDate: 1,
+    modifyDate: 2,
+    content: '<new-format/><a href="https://www.filemail.com/d/example?id=1&amp;source=note"><text indent="1">网页链接</text></a>',
+    extraInfo: '{}',
+  },
+  {},
+);
+
+assert.equal(
+  webLinkNote.content,
+  '[网页链接](https://www.filemail.com/d/example?id=1&source=note)',
+);
+
 const legacyImageNote = normalizeXiaomiNote(
   {
     id: 'legacy-image-note',
