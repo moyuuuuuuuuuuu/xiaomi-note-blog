@@ -11,6 +11,7 @@ import { getMissingGrants, sanitizeNoteDetail, toNoteSummary } from './noteAcces
 import { createUnlockSessionStore, getUnlockSessionCookie } from './unlockSession.js';
 import { createXiaomiImageCache, prepareSyncedNotesWithImageCache } from './xiaomiImageCache.js';
 import { fetchXiaomiNoteImage, syncXiaomiNotesFromServer } from './xiaomi.js';
+import { checkXiaomiCookie } from './xiaomiCookie.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const rootDir = resolve(__dirname, '..');
@@ -33,6 +34,8 @@ const passwordLimiter = createPasswordAttemptLimiter({
 });
 const store = createDataStore(dataDir);
 const imageCache = createXiaomiImageCache(dataDir);
+const cookieCheckIntervalMs = Number(process.env.COOKIE_CHECK_INTERVAL_MS || 6 * 60 * 60 * 1000);
+const cookieCheckStartDelayMs = Number(process.env.COOKIE_CHECK_START_DELAY_MS || 60 * 1000);
 
 const contentTypes = {
   '.html': 'text/html; charset=utf-8',
@@ -117,6 +120,11 @@ function sendImage(req, res, image) {
 
 async function handleApi(req, res, url) {
   try {
+    if ((req.method === 'GET' || req.method === 'HEAD') && url.pathname === '/api/health') {
+      sendJson(res, 200, { ok: true });
+      return;
+    }
+
     const localImageMatch = url.pathname.match(/^\/api\/images\/([^/]+)$/);
     if ((req.method === 'GET' || req.method === 'HEAD') && localImageMatch) {
       const image = await imageCache.readByKey(decodeURIComponent(localImageMatch[1]));
@@ -248,7 +256,13 @@ async function handleApi(req, res, url) {
     if (req.method === 'POST' && url.pathname === '/api/settings/mi-cookie') {
       if (!requireAdmin(req, res)) return;
       const body = await readBody(req);
-      const settings = await store.updateSettings({ miCookie: body.cookie || '' });
+      const settings = await store.updateSettings({
+        miCookie: body.cookie || '',
+        miCookieStatus: 'unchecked',
+        miCookieLastCheckedAt: null,
+        miCookieLastRefreshedAt: null,
+        miCookieLastError: '',
+      });
       sendJson(res, 200, getAdminSettings(settings));
       return;
     }
@@ -447,3 +461,51 @@ createServer(async (req, res) => {
     console.warn('ADMIN_PASSWORD is not set. Cookie management will be disabled.');
   }
 });
+
+let cookieCheckRunning = false;
+async function runCookieCheck() {
+  if (cookieCheckRunning) return;
+  cookieCheckRunning = true;
+  try {
+    const settings = await store.readSettings();
+    if (!settings.miCookie) return;
+    const checkedAt = Date.now();
+    try {
+      const result = await checkXiaomiCookie(settings.miCookie);
+      const latestSettings = await store.readSettings();
+      if (latestSettings.miCookie !== settings.miCookie) {
+        console.log('检测期间 Cookie 已被人工更新，忽略本次检测结果');
+        return;
+      }
+      await store.updateSettings({
+        ...(result.refreshed ? { miCookie: result.cookie, miCookieLastRefreshedAt: checkedAt } : {}),
+        miCookieStatus: 'valid',
+        miCookieLastCheckedAt: checkedAt,
+        miCookieLastError: '',
+      });
+      console.log(result.refreshed ? '小米云 Cookie 检测有效，已保存服务端下发的新 Cookie' : '小米云 Cookie 检测有效');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Cookie 检测失败';
+      const latestSettings = await store.readSettings();
+      if (latestSettings.miCookie !== settings.miCookie) {
+        console.log('检测期间 Cookie 已被人工更新，忽略本次失败结果');
+        return;
+      }
+      await store.updateSettings({
+        miCookieStatus: 'invalid',
+        miCookieLastCheckedAt: checkedAt,
+        miCookieLastError: message,
+      });
+      console.warn(`小米云 Cookie 检测失败：${message}`);
+    }
+  } finally {
+    cookieCheckRunning = false;
+  }
+}
+
+if (Number.isFinite(cookieCheckIntervalMs) && cookieCheckIntervalMs > 0) {
+  setTimeout(() => {
+    void runCookieCheck();
+    setInterval(() => void runCookieCheck(), Math.max(60 * 1000, cookieCheckIntervalMs)).unref();
+  }, Math.max(0, cookieCheckStartDelayMs)).unref();
+}

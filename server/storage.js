@@ -10,6 +10,10 @@ export const defaultSettings = {
   folderPasswords: {},
   miCookie: '',
   miCookieUpdatedAt: null,
+  miCookieStatus: 'unchecked',
+  miCookieLastCheckedAt: null,
+  miCookieLastRefreshedAt: null,
+  miCookieLastError: '',
 };
 
 async function readJson(path, fallback) {
@@ -45,6 +49,10 @@ export function getAdminSettings(settings) {
   return {
     ...getPublicSettings(settings),
     folderPasswords: { ...(settings.folderPasswords || {}) },
+    miCookieStatus: settings.miCookieStatus || 'unchecked',
+    miCookieLastCheckedAt: settings.miCookieLastCheckedAt || null,
+    miCookieLastRefreshedAt: settings.miCookieLastRefreshedAt || null,
+    miCookieLastError: settings.miCookieLastError || '',
   };
 }
 

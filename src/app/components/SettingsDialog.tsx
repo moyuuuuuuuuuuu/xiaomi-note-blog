@@ -105,6 +105,10 @@ export function SettingsDialog({ open, onClose, settings, onSave, onAdminAuthent
       protectedFolders: settings.protectedFolders,
       hasMiCookie: settings.hasMiCookie,
       miCookieUpdatedAt: settings.miCookieUpdatedAt,
+      miCookieStatus: settings.miCookieStatus,
+      miCookieLastCheckedAt: settings.miCookieLastCheckedAt,
+      miCookieLastRefreshedAt: settings.miCookieLastRefreshedAt,
+      miCookieLastError: settings.miCookieLastError,
     });
     onClose();
   };
@@ -382,6 +386,35 @@ export function SettingsDialog({ open, onClose, settings, onSave, onAdminAuthent
                       {settings.hasMiCookie ? '已配置' : '未配置'}
                     </span>
                   </div>
+
+                  {isAdminAuthenticated && settings.hasMiCookie && (
+                    <div className={`rounded-md p-3 text-sm ${
+                      settings.miCookieStatus === 'valid'
+                        ? 'bg-green-50 text-green-700'
+                        : settings.miCookieStatus === 'invalid'
+                          ? 'bg-red-50 text-red-700'
+                          : 'bg-gray-50 text-gray-600'
+                    }`}>
+                      <div>
+                        自动检测：{settings.miCookieStatus === 'valid'
+                          ? 'Cookie 有效'
+                          : settings.miCookieStatus === 'invalid'
+                            ? 'Cookie 已失效或检测失败'
+                            : '等待首次检测'}
+                        {settings.miCookieLastCheckedAt
+                          ? `（${new Date(settings.miCookieLastCheckedAt).toLocaleString('zh-CN')}）`
+                          : ''}
+                      </div>
+                      {settings.miCookieLastRefreshedAt && (
+                        <div className="mt-1 text-xs">
+                          最近自动保存新 Cookie：{new Date(settings.miCookieLastRefreshedAt).toLocaleString('zh-CN')}
+                        </div>
+                      )}
+                      {settings.miCookieStatus === 'invalid' && settings.miCookieLastError && (
+                        <div className="mt-1 break-all text-xs">{settings.miCookieLastError}</div>
+                      )}
+                    </div>
+                  )}
 
                   {!adminConfigured && (
                     <div className="p-3 bg-red-50 text-red-700 rounded-md text-sm">

@@ -1,0 +1,21 @@
+services:
+  xiaomi-note-blog:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: xiaomi-note-blog:latest
+    container_name: xiaomi-note-blog
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    environment:
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?请在 .env 中设置 ADMIN_PASSWORD}
+      PORT: 8787
+      DATA_DIR: /app/data
+      PASSWORD_LOCK_MAX_ATTEMPTS: ${PASSWORD_LOCK_MAX_ATTEMPTS:-5}
+      PASSWORD_LOCK_MS: ${PASSWORD_LOCK_MS:-86400000}
+      TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-0}
+      COOKIE_CHECK_INTERVAL_MS: ${COOKIE_CHECK_INTERVAL_MS:-21600000}
+      COOKIE_CHECK_START_DELAY_MS: ${COOKIE_CHECK_START_DELAY_MS:-60000}
+    volumes:
+      - ./data:/app/data

@@ -30,6 +30,10 @@ export interface Settings {
   protectedFolders: string[];
   hasMiCookie?: boolean;
   miCookieUpdatedAt?: number | null;
+  miCookieStatus?: 'unchecked' | 'valid' | 'invalid';
+  miCookieLastCheckedAt?: number | null;
+  miCookieLastRefreshedAt?: number | null;
+  miCookieLastError?: string;
 }
 
 export default function App() {

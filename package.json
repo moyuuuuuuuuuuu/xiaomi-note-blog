@@ -2,13 +2,14 @@
   "name": "@figma/my-make-file",
   "private": true,
   "version": "0.0.1",
+  "packageManager": "pnpm@10.30.3",
   "type": "module",
   "scripts": {
     "build": "vite build",
     "dev": "vite",
     "server": "node server/index.js",
     "start": "node server/index.js",
-    "test": "node src/app/lib/noteIndex.test.mjs && node src/app/lib/noteAccessFlow.test.mjs && node src/app/lib/dustParticles.test.mjs && node server/env.test.mjs && node server/noteAccess.test.mjs && node server/unlockSession.test.mjs && node server/storage.test.mjs && node server/auth.test.mjs && node server/passwordLock.test.mjs && node server/xiaomiImageCache.test.mjs && node server/apiContract.test.mjs && node src/app/lib/api.test.mjs && node src/app/lib/settings.test.mjs && node src/app/lib/xiaomiNotes.test.mjs && node src/app/lib/noteMarkdown.test.mjs && node src/app/lib/accessSession.test.mjs"
+    "test": "node src/app/lib/noteIndex.test.mjs && node src/app/lib/noteAccessFlow.test.mjs && node src/app/lib/dustParticles.test.mjs && node server/env.test.mjs && node server/noteAccess.test.mjs && node server/unlockSession.test.mjs && node server/storage.test.mjs && node server/auth.test.mjs && node server/passwordLock.test.mjs && node server/xiaomiCookie.test.mjs && node server/xiaomiImageCache.test.mjs && node server/apiContract.test.mjs && node src/app/lib/api.test.mjs && node src/app/lib/settings.test.mjs && node src/app/lib/xiaomiNotes.test.mjs && node src/app/lib/noteMarkdown.test.mjs && node src/app/lib/accessSession.test.mjs"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",

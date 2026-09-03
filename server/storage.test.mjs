@@ -51,6 +51,10 @@ try {
     protectedFolders: ['生活'],
     hasMiCookie: true,
     miCookieUpdatedAt: settings.miCookieUpdatedAt,
+    miCookieStatus: 'unchecked',
+    miCookieLastCheckedAt: null,
+    miCookieLastRefreshedAt: null,
+    miCookieLastError: '',
   });
   assert.equal('miCookie' in getPublicSettings(settings), false);
   assert.equal('miCookie' in getAdminSettings(settings), false);

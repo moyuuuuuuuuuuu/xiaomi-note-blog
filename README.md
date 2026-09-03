@@ -42,6 +42,54 @@ pnpm start
 
 访问 `http://127.0.0.1:8787/`。
 
+## 部署到 NAS Container
+
+项目已包含多阶段 `Dockerfile` 和 `compose.yaml`。镜像运行时只包含构建后的前端、Node API 服务和数据目录，适用于支持 Docker Compose 的 NAS（群晖 Container Manager、威联通 Container Station 等）。
+
+1. 将整个项目目录上传或克隆到 NAS，例如 `/volume1/docker/xiaomi-note-blog`。
+2. 复制 `.env.example` 为 `.env`，至少修改 `ADMIN_PASSWORD`，不要保留示例密码。
+3. 在项目目录中构建并启动：
+
+```bash
+docker compose up -d --build
+```
+
+4. 打开 `http://NAS-IP:8787/`。容器健康状态可通过下面的命令查看：
+
+```bash
+docker compose ps
+```
+
+`./data` 会映射到容器内的 `/app/data`，升级或重建容器不会丢失站点设置、笔记和已缓存的图片。迁移现有数据时，在首次启动前将原来的 `data/` 完整复制到 NAS 项目目录即可。
+
+服务会在启动 1 分钟后检查一次小米云 Cookie，之后默认每 6 小时检查。检查只读取最小笔记列表来验证登录状态，不会同步或改写笔记；如果小米响应下发了更新后的 Cookie，服务会自动合并并保存到 `data/settings.json`。检测状态和最近刷新时间仅在管理员认证后的同步设置页面显示。
+
+可在 `.env` 中调整检测周期：
+
+```env
+COOKIE_CHECK_INTERVAL_MS=21600000
+COOKIE_CHECK_START_DELAY_MS=60000
+```
+
+将 `COOKIE_CHECK_INTERVAL_MS` 设置为 `0` 可关闭自动检测。Cookie 真正失效且小米要求重新登录、验证码或二次验证时，仍需在设置页人工粘贴新 Cookie。
+
+如果端口 `8787` 已被占用，只修改 `compose.yaml` 中端口映射左侧的数字，例如 `"18887:8787"`。如果前面只有一层可信的 Nginx/反向代理，并且需要按访客真实 IP 执行密码防爆破，可将 `.env` 中的 `TRUST_PROXY_HOPS` 设置为 `1`；直接通过 NAS 端口访问时保持 `0`。
+
+更新版本：
+
+```bash
+git pull
+docker compose up -d --build
+```
+
+停止服务：
+
+```bash
+docker compose down
+```
+
+`docker compose down` 不会删除 `./data`。不要使用 `down -v`，也不要在升级时删除 NAS 上的 `data/` 目录。
+
 ## 数据存储
 
 默认数据目录是项目根目录下的 `data/`：

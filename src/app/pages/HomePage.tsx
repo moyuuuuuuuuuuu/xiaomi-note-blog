@@ -22,6 +22,10 @@ const defaultSettings: AppSettings = {
   protectedFolders: [],
   hasMiCookie: false,
   miCookieUpdatedAt: null,
+  miCookieStatus: 'unchecked',
+  miCookieLastCheckedAt: null,
+  miCookieLastRefreshedAt: null,
+  miCookieLastError: '',
 };
 
 export function HomePage() {
