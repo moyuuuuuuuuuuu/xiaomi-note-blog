@@ -501,7 +501,8 @@ select {
 
 .note-index {
   display: grid;
-  gap: clamp(0.8rem, 1.35vw, 1.15rem);
+  gap: clamp(1.15rem, 2vw, 1.75rem);
+  padding: 0.5rem 0.4rem 0.8rem;
 }
 
 .notes-layout {
@@ -535,7 +536,7 @@ select {
 .note-index-row-group {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: clamp(0.8rem, 1.35vw, 1.15rem);
+  gap: clamp(0.9rem, 1.5vw, 1.3rem);
   align-items: start;
 }
 
@@ -545,6 +546,8 @@ select {
   min-width: 0;
   margin-top: var(--note-card-offset);
   align-self: start;
+  --note-active-rotation: var(--note-card-rotation);
+  --note-active-shift-x: var(--note-card-shift-x);
 }
 
 .note-index-card:hover,
@@ -555,13 +558,18 @@ select {
 .note-index-card-surface {
   position: relative;
   isolation: isolate;
-  min-height: clamp(7.5rem, 10vw, 9rem);
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
-  border-radius: 1.15rem;
+  min-height: var(--note-card-height);
+  overflow: visible;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  border-radius: 0.38rem 0.5rem 0.42rem 0.3rem;
   background:
-    linear-gradient(145deg, color-mix(in srgb, var(--card) 96%, transparent), color-mix(in srgb, var(--card) 78%, transparent));
-  box-shadow: 0 0.35rem 1.2rem rgb(15 23 42 / 3%);
+    linear-gradient(135deg, transparent 0 92%, color-mix(in srgb, var(--brand) 7%, var(--card)) 92%),
+    linear-gradient(155deg, color-mix(in srgb, var(--card) 99%, var(--brand) 1%), color-mix(in srgb, var(--card) 93%, var(--brand) 7%));
+  box-shadow:
+    0.45rem 0.65rem 1.25rem rgb(15 23 42 / 8%),
+    0 1px 0 rgb(255 255 255 / 72%) inset;
+  transform: translateX(var(--note-active-shift-x)) rotate(var(--note-active-rotation));
+  transform-origin: 50% 1.2rem;
   transition:
     transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
     border-color 200ms ease,
@@ -582,18 +590,44 @@ select {
   transition: opacity 200ms ease;
 }
 
+.note-index-card-surface::after {
+  position: absolute;
+  z-index: 2;
+  top: -0.42rem;
+  left: 50%;
+  width: clamp(2.8rem, 38%, 4.6rem);
+  height: 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--border) 38%, transparent);
+  background: color-mix(in srgb, var(--brand) 10%, rgb(255 255 255 / 70%));
+  box-shadow: 0 1px 2px rgb(15 23 42 / 5%);
+  content: '';
+  opacity: 0.64;
+  pointer-events: none;
+  transform: translateX(-50%) rotate(-1.5deg);
+}
+
+.note-index-card:nth-child(3n + 2) .note-index-card-surface::after {
+  left: 28%;
+  transform: translateX(-50%) rotate(2deg);
+}
+
+.note-index-card:nth-child(3n) .note-index-card-surface::after {
+  left: 70%;
+  transform: translateX(-50%) rotate(-2.5deg);
+}
+
 .note-index-card:hover .note-index-card-surface,
 .note-index-card:focus-within .note-index-card-surface {
   border-color: color-mix(in srgb, var(--brand) 40%, var(--border));
   box-shadow:
     0 1rem 2.4rem rgb(15 23 42 / 11%),
     0 0 0 0.22rem color-mix(in srgb, var(--brand) 4%, transparent);
-  transform: translateY(-3px) rotate(-0.2deg);
+  transform: translateX(var(--note-active-shift-x)) translateY(-4px) rotate(var(--note-active-rotation));
 }
 
 .note-index-card:nth-child(even):hover .note-index-card-surface,
 .note-index-card:nth-child(even):focus-within .note-index-card-surface {
-  transform: translateY(-3px) rotate(0.2deg);
+  transform: translateX(var(--note-active-shift-x)) translateY(-4px) rotate(var(--note-active-rotation));
 }
 
 .note-index-card:hover .note-index-card-surface::before,
@@ -606,7 +640,7 @@ select {
   z-index: 1;
   display: flex;
   width: 100%;
-  min-height: clamp(7.5rem, 10vw, 9rem);
+  min-height: var(--note-card-height);
   flex-direction: column;
   justify-content: space-between;
   gap: 0.8rem;
@@ -761,7 +795,8 @@ select {
   .note-index {
     display: flex;
     flex-direction: column;
-    gap: 0.85rem;
+    gap: 1.15rem;
+    padding-inline: 0.25rem;
   }
 
   .note-index-row-group {
@@ -772,18 +807,24 @@ select {
     width: var(--note-mobile-width);
     margin-top: 0;
     margin-left: var(--note-mobile-offset);
+    --note-active-rotation: var(--note-mobile-rotation);
+    --note-active-shift-x: 0px;
   }
 
   .note-index-card-surface,
   .note-index-main {
-    min-height: 7.25rem;
+    min-height: var(--note-mobile-height);
+  }
+
+  .note-index-card-surface {
+    transform: rotate(var(--note-active-rotation));
   }
 
   .note-index-card:hover .note-index-card-surface,
   .note-index-card:focus-within .note-index-card-surface,
   .note-index-card:nth-child(even):hover .note-index-card-surface,
   .note-index-card:nth-child(even):focus-within .note-index-card-surface {
-    transform: translateY(-2px);
+    transform: translateY(-2px) rotate(var(--note-active-rotation));
   }
 
   .note-index-actions {
@@ -809,7 +850,7 @@ select {
   .note-index-card:focus-within .note-index-card-surface,
   .note-index-card:nth-child(even):hover .note-index-card-surface,
   .note-index-card:nth-child(even):focus-within .note-index-card-surface {
-    transform: none;
+    transform: translateX(var(--note-active-shift-x)) rotate(var(--note-active-rotation));
   }
 }
 
