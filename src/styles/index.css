@@ -501,7 +501,7 @@ select {
 
 .note-index {
   display: grid;
-  gap: 0.7rem;
+  gap: clamp(0.8rem, 1.35vw, 1.15rem);
 }
 
 .notes-layout {
@@ -535,7 +535,7 @@ select {
 .note-index-row-group {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 0.7rem;
+  gap: clamp(0.8rem, 1.35vw, 1.15rem);
   align-items: start;
 }
 
@@ -555,11 +555,13 @@ select {
 .note-index-card-surface {
   position: relative;
   isolation: isolate;
-  min-height: 66px;
-  border: 1px solid color-mix(in srgb, var(--border) 92%, transparent);
-  border-radius: 0.85rem;
-  background: color-mix(in srgb, var(--card) 88%, transparent);
-  box-shadow: 0 0 0 transparent;
+  min-height: clamp(9.25rem, 13vw, 11.5rem);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 1.15rem;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--card) 96%, transparent), color-mix(in srgb, var(--card) 78%, transparent));
+  box-shadow: 0 0.35rem 1.2rem rgb(15 23 42 / 3%);
   transition:
     transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
     border-color 200ms ease,
@@ -571,11 +573,9 @@ select {
   z-index: 0;
   inset: 0;
   border-radius: inherit;
-  background: radial-gradient(
-    circle at 92% 4%,
-    color-mix(in srgb, var(--brand) 13%, transparent),
-    transparent 34%
-  );
+  background:
+    radial-gradient(circle at 92% 4%, color-mix(in srgb, var(--brand) 16%, transparent), transparent 40%),
+    linear-gradient(110deg, transparent 54%, color-mix(in srgb, var(--brand) 4%, transparent));
   content: '';
   opacity: 0;
   pointer-events: none;
@@ -586,7 +586,7 @@ select {
 .note-index-card:focus-within .note-index-card-surface {
   border-color: color-mix(in srgb, var(--brand) 40%, var(--border));
   box-shadow:
-    0 0.75rem 1.8rem rgb(15 23 42 / 9%),
+    0 1rem 2.4rem rgb(15 23 42 / 11%),
     0 0 0 0.22rem color-mix(in srgb, var(--brand) 4%, transparent);
   transform: translateY(-3px) rotate(-0.2deg);
 }
@@ -606,11 +606,11 @@ select {
   z-index: 1;
   display: flex;
   width: 100%;
-  min-height: 66px;
+  min-height: clamp(9.25rem, 13vw, 11.5rem);
   flex-direction: column;
   justify-content: space-between;
-  gap: 0.7rem;
-  padding: 0.75rem 0.82rem;
+  gap: 1.15rem;
+  padding: 1.05rem 1.1rem 1rem;
   border: 0;
   border-radius: inherit;
   background: transparent;
@@ -630,22 +630,30 @@ select {
   align-items: center;
   justify-content: space-between;
   gap: 0.55rem;
-  padding-right: 1.7rem;
+  padding-right: 1.9rem;
 }
 
 .note-index-number,
 .note-index-meta {
   color: var(--muted-foreground);
-  font-size: 0.58rem;
-  letter-spacing: 0.08em;
+  font-size: 0.75rem;
+  letter-spacing: 0.055em;
 }
 
 .note-index-number {
   color: var(--brand);
-  font-weight: 650;
+  font-weight: 700;
 }
 
 .note-index-meta {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.4rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.note-index-folder {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -653,18 +661,18 @@ select {
 
 .note-index-title {
   display: flex;
-  max-width: calc(100% - 1rem);
+  max-width: calc(100% - 0.5rem);
   align-items: flex-start;
   gap: 0.42rem;
   overflow-wrap: anywhere;
-  font-size: clamp(0.82rem, 1.1vw, 1.05rem);
-  font-weight: 550;
-  line-height: 1.18;
-  letter-spacing: -0.035em;
+  font-size: clamp(1.05rem, 1.55vw, 1.45rem);
+  font-weight: 600;
+  line-height: 1.28;
+  letter-spacing: -0.045em;
 }
 
 .note-index-card--narrow .note-index-title {
-  font-size: clamp(0.76rem, 0.92vw, 0.94rem);
+  font-size: clamp(0.98rem, 1.25vw, 1.2rem);
 }
 
 .note-index-title svg {
@@ -673,19 +681,48 @@ select {
   color: var(--muted-foreground);
 }
 
-.note-index-arrow {
+.note-index-read {
   position: absolute;
-  right: 0.7rem;
-  bottom: 0.62rem;
-  width: 0.82rem;
+  left: 1.1rem;
+  bottom: 1rem;
   color: var(--muted-foreground);
-  transition: color 180ms ease, transform 200ms ease;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  opacity: 0;
+  transform: translateY(0.25rem);
+  transition: opacity 180ms ease, transform 200ms ease;
 }
 
-.note-index-main:hover .note-index-arrow,
-.note-index-main:focus-visible .note-index-arrow {
-  color: var(--brand);
+.note-index-arrow-wrap {
+  position: absolute;
+  right: 0.85rem;
+  bottom: 0.78rem;
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+  border-radius: 999px;
+  color: var(--muted-foreground);
+  transition: color 180ms ease, border-color 180ms ease, background 180ms ease, transform 200ms ease;
+}
+
+.note-index-arrow {
+  width: 0.9rem;
+}
+
+.note-index-main:hover .note-index-arrow-wrap,
+.note-index-main:focus-visible .note-index-arrow-wrap {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: white;
   transform: translate(0.16rem, -0.16rem);
+}
+
+.note-index-main:hover .note-index-read,
+.note-index-main:focus-visible .note-index-read {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .note-index-actions {
@@ -724,7 +761,7 @@ select {
   .note-index {
     display: flex;
     flex-direction: column;
-    gap: 0.7rem;
+    gap: 0.85rem;
   }
 
   .note-index-row-group {
@@ -737,6 +774,11 @@ select {
     margin-left: var(--note-mobile-offset);
   }
 
+  .note-index-card-surface,
+  .note-index-main {
+    min-height: 8.75rem;
+  }
+
   .note-index-card:hover .note-index-card-surface,
   .note-index-card:focus-within .note-index-card-surface,
   .note-index-card:nth-child(even):hover .note-index-card-surface,
@@ -747,12 +789,18 @@ select {
   .note-index-actions {
     opacity: 1;
   }
+
+  .note-index-read {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .note-index-card-surface,
   .note-index-card-surface::before,
   .note-index-arrow,
+  .note-index-arrow-wrap,
+  .note-index-read,
   .note-index-actions {
     transition: none;
   }

@@ -57,15 +57,22 @@ export function NoteIndex({ notes, isNoteLocked, onSelect, renderActions }: Note
                   <button type="button" className="note-index-main" onClick={() => onSelect(note)}>
                     <span className="note-index-card-head">
                       <span className="note-index-number">{toIndexNumber(index)}</span>
-                      <span className="note-index-meta" title={folder}>
-                        {folder} · {formatIndexDate(note.modifyTime)}
+                      <span className="note-index-meta">
+                        <span className="note-index-folder" title={folder}>{folder}</span>
+                        <span aria-hidden="true">/</span>
+                        <time dateTime={new Date(note.modifyTime).toISOString()}>
+                          {formatIndexDate(note.modifyTime)}
+                        </time>
                       </span>
                     </span>
                     <span className="note-index-title">
                       {isNoteLocked(note) && <Lock aria-label="已加密" />}
                       {note.title}
                     </span>
-                    <ArrowUpRight className="note-index-arrow" aria-hidden="true" />
+                    <span className="note-index-read" aria-hidden="true">阅读</span>
+                    <span className="note-index-arrow-wrap" aria-hidden="true">
+                      <ArrowUpRight className="note-index-arrow" />
+                    </span>
                   </button>
                   {renderActions(note)}
                 </article>
