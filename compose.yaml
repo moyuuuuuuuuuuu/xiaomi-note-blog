@@ -1,3 +1,5 @@
+name: xiaomi-note
+
 services:
   xiaomi-note-blog:
     build:
