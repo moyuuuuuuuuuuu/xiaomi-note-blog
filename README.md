@@ -62,6 +62,8 @@ docker compose ps
 
 `./data` 会映射到容器内的 `/app/data`，升级或重建容器不会丢失站点设置、笔记和已缓存的图片。迁移现有数据时，在首次启动前将原来的 `data/` 完整复制到 NAS 项目目录即可。
 
+容器启动时会检查 `/app/data` 的写入权限并修正该目录的属主，然后降权为普通 `node` 用户运行服务。这可以避免群晖等 NAS 创建 bind mount 目录后，保存 Cookie 时出现 `EACCES: permission denied, open '/app/data/settings.json'`。
+
 服务会在启动 1 分钟后检查一次小米云 Cookie，之后默认每 6 小时检查。检查只读取最小笔记列表来验证登录状态，不会同步或改写笔记；如果小米响应下发了更新后的 Cookie，服务会自动合并并保存到 `data/settings.json`。检测状态和最近刷新时间仅在管理员认证后的同步设置页面显示。
 
 可在 `.env` 中调整检测周期：

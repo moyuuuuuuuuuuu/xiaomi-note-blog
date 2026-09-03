@@ -18,16 +18,20 @@ ENV NODE_ENV=production \
     DIST_DIR=/app/dist
 
 WORKDIR /app
+RUN apk add --no-cache su-exec
 COPY --chown=node:node package.json ./package.json
 COPY --from=build --chown=node:node /app/dist ./dist
 COPY --chown=node:node server ./server
 COPY --chown=node:node src/app/lib/xiaomiNotes.js ./src/app/lib/xiaomiNotes.js
-RUN mkdir -p /app/data && chown node:node /app/data
+COPY --chown=root:root docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod 0755 /usr/local/bin/docker-entrypoint.sh \
+  && mkdir -p /app/data \
+  && chown node:node /app/data
 
-USER node
 EXPOSE 8787
 VOLUME ["/app/data"]
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||8787)+'/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
 
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "server/index.js"]
