@@ -6,6 +6,7 @@ RUN corepack enable && corepack prepare pnpm@10.30.3 --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY index.html postcss.config.mjs vite.config.ts default_shadcn_theme.css ./
+COPY public ./public
 COPY src ./src
 RUN pnpm build
 
