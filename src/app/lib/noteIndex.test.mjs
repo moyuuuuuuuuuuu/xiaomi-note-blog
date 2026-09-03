@@ -53,7 +53,7 @@ assert.deepEqual(getNoteRowLayout(-1), {
 
 const layoutNotes = Array.from({ length: 13 }, (_, index) => ({ id: String(index + 1) }));
 const groupedRows = groupNotesByRowPattern(layoutNotes);
-assert.deepEqual(groupedRows.map((row) => row.entries.length), [3, 4, 2, 3, 1]);
+assert.deepEqual(groupedRows.map((row) => row.entries.length), [3, 4, 2, 4]);
 assert.deepEqual(
   groupedRows.flatMap((row) => row.entries.map((entry) => entry.index)),
   Array.from({ length: 13 }, (_, index) => index),
@@ -67,7 +67,23 @@ assert.deepEqual(
   ],
 );
 assert.deepEqual(
-  groupedRows[4].entries.map(({ index, columnStart, columnSpan, offset }) => ({ index, columnStart, columnSpan, offset })),
-  [{ index: 12, columnStart: 10, columnSpan: 3, offset: 3 }],
+  groupedRows[3].entries.map(({ index, columnStart, columnSpan, offset }) => ({ index, columnStart, columnSpan, offset })),
+  [
+    { index: 9, columnStart: 1, columnSpan: 3, offset: 3 },
+    { index: 10, columnStart: 4, columnSpan: 3, offset: 10 },
+    { index: 11, columnStart: 7, columnSpan: 4, offset: 0 },
+    { index: 12, columnStart: 11, columnSpan: 2, offset: 5 },
+  ],
+);
+
+assert.deepEqual(
+  groupNotesByRowPattern(Array.from({ length: 19 }, (_, index) => ({ id: String(index + 1) })))
+    .map((row) => row.entries.length),
+  [3, 4, 2, 3, 4, 3],
+);
+assert.deepEqual(
+  groupNotesByRowPattern([{ id: 'only' }])[0].entries
+    .map(({ columnStart, columnSpan, offset }) => ({ columnStart, columnSpan, offset })),
+  [{ columnStart: 4, columnSpan: 6, offset: 0 }],
 );
 assert.deepEqual(groupNotesByRowPattern([]), []);

@@ -57,19 +57,52 @@ export function getNoteRowLayout(rowIndex) {
   };
 }
 
+function getTerminalRowLayout(rowIndex, count) {
+  if (count === 1) {
+    return {
+      rowIndex,
+      patternIndex: -1,
+      cycle: Math.floor(rowIndex / NOTE_ROW_PATTERNS.length),
+      count: 1,
+      spans: [6],
+      offsets: [0],
+      direction: 'forward',
+      startColumn: 4,
+    };
+  }
+
+  const patternIndex = NOTE_ROW_PATTERNS.findIndex((pattern) => pattern.count === count);
+  const cycle = Math.floor(rowIndex / NOTE_ROW_PATTERNS.length);
+  const direction = cycle % 2 === 0 ? 'forward' : 'reverse';
+  const pattern = NOTE_ROW_PATTERNS[patternIndex];
+  const mirror = (values) => direction === 'reverse' ? [...values].reverse() : [...values];
+
+  return {
+    rowIndex,
+    patternIndex,
+    cycle,
+    count,
+    spans: mirror(pattern.spans),
+    offsets: mirror(pattern.offsets),
+    direction,
+  };
+}
+
 export function groupNotesByRowPattern(notes) {
   const rows = [];
   let noteIndex = 0;
   let rowIndex = 0;
 
   while (noteIndex < notes.length) {
-    const layout = getNoteRowLayout(rowIndex);
+    const remaining = notes.length - noteIndex;
+    const layout = remaining <= 4
+      ? getTerminalRowLayout(rowIndex, remaining)
+      : getNoteRowLayout(rowIndex);
     const rowNotes = notes.slice(noteIndex, noteIndex + layout.count);
     const usedSpans = layout.spans.slice(0, rowNotes.length);
     const usedColumns = usedSpans.reduce((total, span) => total + span, 0);
-    let columnStart = layout.direction === 'reverse' && rowNotes.length < layout.count
-      ? 13 - usedColumns
-      : 1;
+    let columnStart = layout.startColumn
+      ?? (layout.direction === 'reverse' && rowNotes.length < layout.count ? 13 - usedColumns : 1);
 
     const entries = rowNotes.map((note, slot) => {
       const entry = {
